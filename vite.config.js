@@ -39,8 +39,7 @@ export default defineConfig({
     }
   },
   build: {
-    // outDir: "../netsphere/priv/static/",
-    outDir: "/dist",
+    outDir: 'dist',
     emptyOutDir: true,
   }
 });
