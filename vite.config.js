@@ -27,7 +27,7 @@ export default defineConfig({
         secure: false
       },
       '/vendor': {
-        target: 'http://localhost:4700',
+        target: 'http://localhost:2538',
         changeOrigin: true,
         secure: false
       }
