@@ -7,22 +7,22 @@ export default defineConfig({
     open: true,
     proxy: {
       '/css': {
-        target: 'http://localhost:4700',
+        target: 'http://localhost:2538',
         changeOrigin: true,
         secure: false
       },
       '/js': {
-        target: 'http://localhost:4700',
+        target: 'http://localhost:2538',
         changeOrigin: true,
         secure: false
       },
       '/webfonts': {
-        target: 'http://localhost:4700',
+        target: 'http://localhost:2538',
         changeOrigin: true,
         secure: false
       },
       '/images': {
-        target: 'http://localhost:4700',
+        target: 'http://localhost:2538',
         changeOrigin: true,
         secure: false
       },
