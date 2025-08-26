@@ -41,7 +41,8 @@ export default defineConfig({
   preview: {
     port: 5274,
     host: '127.0.0.1',
-    open: true
+    open: true,
+    allowedHosts: ['netspheremall.com', 'www.netspheremall.com']
   },
   build: {
     outDir: 'dist',
