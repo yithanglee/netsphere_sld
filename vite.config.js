@@ -38,6 +38,10 @@ export default defineConfig({
       'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization'
     }
   },
+  preview: {
+    port: 5274,
+    open: true
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
