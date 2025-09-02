@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // has to be done after rendering page, 
       // callback function to call this render
       var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
-          "light", "userProfile", "wallet", "announcement", "products", "product",
+          "light", "userProfile", "wallet", "crypto_wallet", "announcement", "products", "product",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
 
@@ -1210,12 +1210,35 @@ export let commerceApp_ = {
 
 
       },
+      crypto_wallet() {
+          $("crypto_wallet").each((i, v) => {
+              var crypto_wallet = phxApp.api("crypto_wallet", {
+                  token: phxApp.user.token
+              })
+              console.log(crypto_wallet)
+              $("crypto_wallet").html(`
+                <div class="d-flex flex-column flex-lg-row align-items-center flex gap-2">
+       
+                    <h5 class="">Crypto</h5>
+                    
+                      <span>` + crypto_wallet.address + `</span>
+
+                      <div
+                     class="btn btn-primary"
+                     onclick="phxApp.copyToClipboard('` + crypto_wallet.address + `')">
+                      Copy
+                     </div>
+               
+                </div>
+              `)
+          })
+      },
       topup() {
           function payData(params) {
-              var rowData = phxApp.rowData(params)
+              var msg, rowData = phxApp.rowData(params)
               console.log(rowData)
               if (rowData.payment != null) {
-                  if (rowData.payment.payment_method == "fpx") {
+                  if (rowData.payment.payment_method == "nowpayments") {
 
 
                       msg = ''
@@ -1230,7 +1253,7 @@ export let commerceApp_ = {
                       phxApp.modal({
                           autoClose: false,
                           selector: "#mySubModal",
-                          header: "FPX",
+                          header: "NowPayments",
                           content: `
 
             ` + msg + `
@@ -1297,63 +1320,25 @@ export let commerceApp_ = {
 
           }
           $("topup").customHtml(`    
-      <div class="card-body ">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3>Topup Transaction</h3>
-          <div class="btn btn-primary " id="new_topup">
-            <span class="d-flex align-items-center"><i class="fa fa-plus me-1"></i>Topup</span></div>
-        </div>
-        <div class="" id="tab2"></div>
-      </div>
-        `)
+                <div class="card-body ">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Topup Transaction</h3>
+                    <div class="btn btn-primary " id="new_topup">
+                        <span class="d-flex align-items-center"><i class="fa fa-plus me-1"></i>Topup</span></div>
+                    </div>
+                    <div class="" id="tab2"></div>
+                </div>
+                    `)
 
           window.selectedBank = (bank) => {
               var valu = $("input[name='WalletTopup[bank]']").val(bank)
           }
 
 
-          var razerList = phxApp.api("razer_list", {}),
-              channels =
-              Object.keys(razerList),
-              sections = [];
+          var sections = [];
 
 
 
-          channels.forEach((channel, i) => {
-              var subSections = []
-
-              razerList[channel].forEach((child, ii) => {
-
-                  var div = `
-
-          <div class="py-1 col-6 col-lg-4 use-channel" aria-channel-label='` + child.channel_map.direct.request + `' >
-            <img class="w-100 m-2 m-lg-0" src="` + child.logo_url_120x43 + `"></img>
-          </div>
-          `
-                  if (child.currency.includes("MYR")) {
-
-                      if (child.status == 1) {
-
-                          if (child.channel_map.direct.request != "") {
-
-                              subSections.push(div)
-                          }
-                      }
-                  }
-              })
-
-
-              sections.push(`
-
-          <div class="row mt-2 pb-1 border-success border-bottom">
-         
-          ` + subSections.join("") + `
-          </div>
-
-
-          `)
-
-          })
 
 
           $("#new_topup").click(() => {
@@ -1363,25 +1348,27 @@ export let commerceApp_ = {
                   autoClose: false,
                   header: 'New Register Point Topup',
                   content: `
-          <div class="row ">
-            <form class="col-12 offset-lg-1 col-lg-10 with_mod row p-4" module="WalletTopup" id="WalletTopup">
-             
+                        <div class="row ">
+                            <form class="col-12 offset-lg-1 col-lg-10 with_mod row p-4" module="WalletTopup" 
+                            id="WalletTopup">
+                            
 
-            </form>
+                            </form>
 
-          </div>
-      `
+                        </div>
+                    `
               })
 
 
 
               phxApp.createForm({
                       id: "0",
-                      user_id: phxApp.user.id
+                      user_id: phxApp.user.id,
+                      payment_method: "nowpayments"
                   },
                   null, ['id', {
                           label: 'amount',
-                          alt_name: 'Amount (RP)',
+                          alt_name: 'Amount (USDT-POLYGON)',
                           alt_class: "col-12"
                       }, {
                           label: 'remarks',
@@ -1395,26 +1382,19 @@ export let commerceApp_ = {
 
 
               <div id="payment-placeholder">
-                <section class="p-4 razer-display">
-                  <h3>Choose 1 channel</h3>
+                <section class="py-4 razer-display">
+                  <h3>Choose 1 of these methods</h3>
                 ` + sections.join("") + `
                 </section>
                 <section class="d-none upload-display">
                   <div class="px-4 pt-4">
-                    Kindly bank in to either 1 of these account.
+                    Kindly deposit to either 1 of these account.
                   </div>
                   <div class="p-4 fs-5">
-                    HAHO LIFE SDN. BHD.<br>
+                    USDT POLYGON<br>
+                    
                     <span>
-                      <div> MBB </div>
-                      <div>5642 4949 7131  <div class="btn btn-primary" onclick="phxApp.copyToClipboard('564249497131');selectedBank('MBB')">Copy</div></div>
-                    </span><br>
-                    <span>
-                      <div> CIMB </div>
-                      <div>8011 2277 45 <div class="btn btn-primary" onclick="phxApp.copyToClipboard('8011227745');selectedBank('CIMB')">Copy</div></div>
-                    </span><br>
-                    <span>
-                      <div> PUBLIC BANK </div>
+                      <div>  </div>
                       <div>3237 7779 07 <div class="btn btn-primary" onclick="phxApp.copyToClipboard('3237777907');selectedBank('PBB')">Copy</div></div>
                     </span><br>
                   </div>
@@ -1424,7 +1404,7 @@ export let commerceApp_ = {
                   <label class="btn btn-outline-primary" for="btnradio1z">Upload Bank In Slip</label>
 
                   <input type="radio" class="btn-check show-razer" name="btnradio" id="btnradio2z" autocomplete="off" checked="">
-                  <label class="btn btn-outline-primary" for="btnradio2z">Online Banking/CC</label>
+                  <label class="btn btn-outline-primary" for="btnradio2z">NowPayments</label>
        
                 </div>
 
@@ -1436,8 +1416,8 @@ export let commerceApp_ = {
                       {
                           label: 'payment_method',
                           selection: [{
-                              id: 'fpx',
-                              name: 'FPX'
+                              id: 'nowpayments',
+                              name: 'NowPayments'
                           }, {
                               id: 'bank in slip',
                               name: 'BANK IN SLIP'
@@ -1458,7 +1438,7 @@ export let commerceApp_ = {
 
                   (j) => {
                       console.info(j)
-                      if (j.payment_method == "fpx") {
+                      if (j.payment_method == "nowpayments") {
 
 
                           function postRedirect(url, data) {
@@ -1482,8 +1462,8 @@ export let commerceApp_ = {
                           }
 
 
-                          postRedirect(j.payment.payment_url, JSON.parse(j.payment.webhook_details));
-
+                        //   postRedirect(j.payment.payment_url, JSON.parse(j.payment.webhook_details));
+                          window.open(j.payment_url, '_blank');
                       } else {
 
                           phxApp.navigateTo("/topup_register_point")
@@ -1494,30 +1474,19 @@ export let commerceApp_ = {
               )
 
 
-              $(".show-upload").click(() => {
+              $(document).on("click",".show-upload",() => {
                   $(".upload-display").removeClass("d-none")
                   $(".razer-display").addClass("d-none")
                   $("select[name='WalletTopup[payment_method]']").val('bank in slip')
               })
-              $(".show-razer").click(() => {
+              $(document).on("click",".show-razer",() => {
                   $(".upload-display").addClass("d-none")
                   $(".razer-display").removeClass("d-none")
-                  $("select[name='WalletTopup[payment_method]']").val('fpx')
+                  $("select[name='WalletTopup[payment_method]']").val('nowpayments')
               })
 
 
-              $("input[name='WalletTopup[amount]']").on("change", () => {
-                  var valu = $("input[name='WalletTopup[amount]']").val()
-                  $("input[name='WalletTopup[remarks]']").val("MYR " + valu * 5)
-              })
-
-              $(".use-channel").click(function() {
-                  var channel = $(this).attr("aria-channel-label")
-                  $(".use-channel").removeClass("border border-primary rounded")
-                  $(this).addClass("border border-primary rounded")
-                  console.info("use channel: " + channel)
-                  $("input[name='WalletTopup[bank]']").val(channel)
-              })
+    
 
 
           })
@@ -2196,18 +2165,18 @@ export let commerceApp_ = {
           if (sale.status == "pending_payment") {
               if (sale.payment != null) {
 
-                  var res = phxApp_.api("check_bill", {
-                      id: sale.payment.billplz_code
-                  })
+                //   var res = phxApp_.api("check_bill", {
+                //       id: sale.payment.billplz_code
+                //   })
 
-                  if (res.paid == true) {
-                      phxApp_.notify("Payment updated!")
-                  }
+                //   if (res.paid == true) {
+                //       phxApp_.notify("Payment updated!")
+                //   }
               }
           }
           $("title").html("Order ID: " + sale.id)
           window.sale = sale
-          var count = 0,
+          var reg_dets,shipping, count = 0,
               list = [],
               total_pv = 0,
               subtotal = 0.0;
@@ -2601,73 +2570,80 @@ export let commerceApp_ = {
           var malaysia = phxApp_.countries_.filter((v, i) => {
               return v.name == "Malaysia"
           })[0]
-          if (malaysia.id == phxApp_.chosen_country_id_.id) {
+
+          try {
 
 
-              if ($("[name='user[pick_up_point_id]']").val() == null) {
 
-                  $(".ss1").customHtml(`
-              <select class="form-select" required id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
-              </select>
-              <label class="ms-2" for="floatingInput">State</label>
-        `)
-              } else {
-                  $(".ss1").customHtml(`
-              <select class="form-select"  id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
-              </select>
-              <label class="ms-2" for="floatingInput">State</label>
-        `)
-              }
-              var states = [
-                  ["jhr", "Johor"],
-                  ["kdh", "Kedah"],
-                  ["ktn", "Kelantan"],
-                  ["mlk", "Melaka"],
-                  ["nsn", "Negeri Sembilan"],
-                  ["phg", "Pahang"],
-                  ["prk", "Perak"],
-                  ["pls", "Perlis"],
-                  ["png", "Pulau Pinang"],
-                  ["sgr", "Selangor"],
-                  ["trg", "Terengganu"],
-                  ["kul", "Kuala Lumpur"],
-                  ["pjy", "Putra Jaya"],
-                  ["srw", "Sarawak"],
-                  ["sbh", "Sabah"],
-                  ["lbn", "Labuan"]
-              ]
-              states.forEach((v, i) => {
-                  if (window.selectedState == v[1]) {
-                      $("select[name='user[shipping][state]']").append(`
-            <option selected value="` + v[1] + `">` + v[1] + `</option>`)
-                  } else {
-                      $("select[name='user[shipping][state]']").append(`
-            <option value="` + v[1] + `">` + v[1] + `</option>`)
-                  }
-              })
-              $("select[name='user[shipping][state]']").change(() => {
-                  window.selectedState = $("select[name='user[shipping][state]']").val()
-                  commerceApp_.components["updateCart"]()
-                  commerceApp_.components["cartItems"]()
-              })
-          } else {
-              if ($("[name='user[pick_up_point_id]']").val() == null) {
+                if (malaysia.id == phxApp_.chosen_country_id_.id) {
 
-                  $(".ss1").customHtml(`
-              <input class="form-control" required id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
-              </input>
-              <label class="ms-2" for="floatingInput">State</label>
-        `)
-              } else {
 
-                  $(".ss1").customHtml(`
-              <input class="form-control"  id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
-              </input>
-              <label class="ms-2" for="floatingInput">State</label>
-        `)
-              }
-          }
+                    if ($("[name='user[pick_up_point_id]']").val() == null) {
 
+                        $(".ss1").customHtml(`
+                                    <select class="form-select" required id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
+                                    </select>
+                                    <label class="ms-2" for="floatingInput">State</label>
+                                `)
+                    } else {
+                        $(".ss1").customHtml(`
+                                        <select class="form-select"  id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
+                                        </select>
+                                        <label class="ms-2" for="floatingInput">State</label>
+                                    `)
+                    }
+                    var states = [
+                        ["jhr", "Johor"],
+                        ["kdh", "Kedah"],
+                        ["ktn", "Kelantan"],
+                        ["mlk", "Melaka"],
+                        ["nsn", "Negeri Sembilan"],
+                        ["phg", "Pahang"],
+                        ["prk", "Perak"],
+                        ["pls", "Perlis"],
+                        ["png", "Pulau Pinang"],
+                        ["sgr", "Selangor"],
+                        ["trg", "Terengganu"],
+                        ["kul", "Kuala Lumpur"],
+                        ["pjy", "Putra Jaya"],
+                        ["srw", "Sarawak"],
+                        ["sbh", "Sabah"],
+                        ["lbn", "Labuan"]
+                    ]
+                    states.forEach((v, i) => {
+                        if (window.selectedState == v[1]) {
+                            $("select[name='user[shipping][state]']").append(`
+                                        <option selected value="` + v[1] + `">` + v[1] + `</option>`)
+                        } else {
+                            $("select[name='user[shipping][state]']").append(`
+                                        <option value="` + v[1] + `">` + v[1] + `</option>`)
+                        }
+                    })
+                    $("select[name='user[shipping][state]']").change(() => {
+                        window.selectedState = $("select[name='user[shipping][state]']").val()
+                        commerceApp_.components["updateCart"]()
+                        commerceApp_.components["cartItems"]()
+                    })
+                } else {
+                    if ($("[name='user[pick_up_point_id]']").val() == null) {
+
+                        $(".ss1").customHtml(`
+                                    <input class="form-control" required id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
+                                    </input>
+                                    <label class="ms-2" for="floatingInput">State</label>
+                                `)
+                    } else {
+
+                        $(".ss1").customHtml(`
+                                    <input class="form-control"  id="s1" onchange="window.choosenAddress = null" name="user[shipping][state]">
+                                    </input>
+                                    <label class="ms-2" for="floatingInput">State</label>
+                                `)
+                    }
+                }
+            } catch(e){
+                console.error(e)
+            }
 
       },
       evalShipping(subtotal) {
@@ -2917,7 +2893,7 @@ export let commerceApp_ = {
       cartItems() {
 
 
-          var is_merchant = $("cartItems").attr("merchant") == "" ? true : false;
+          var accumulated_sales, is_merchant = $("cartItems").attr("merchant") == "" ? true : false;
           const cart = is_merchant ? commerceApp_.mcart_ : commerceApp_.cart_;
           var eligible_rank, hasOverride = false,
               count = 0,
@@ -3628,7 +3604,7 @@ export let commerceApp_ = {
           return eligible_rank
       },
       updateCart() {
-          var count = 0,
+          var accumulated_sales, count = 0,
               list = [],
               subtotal = 0.0;
 
@@ -4027,7 +4003,7 @@ export let commerceApp_ = {
                                     <hr class="dropdown-divider">
                                 </li>
                                 <li>
-                                    <a class="dropdown-item navi" href="/register">
+                                    <a class="dropdown-item navi" href="/upgrade">
                                     <div class="d-flex flex-column">
                                         <div class="d-flex justify-content-between align-items-center">
                                         <span>Checkout</span>
@@ -4466,7 +4442,7 @@ export let commerceApp_ = {
 
               $("[aria-country]").unbind()
               $("[aria-country]").click(function() {
-                  var country_id = $(this).attr("aria-country"),
+                  var translationRes, langPrefix, country_id = $(this).attr("aria-country"),
                       name = $(this).attr("aria-name")
                   phxApp_.chosen_country_id_ = country_id
                   phxApp_.notify("Chosen region: " + name)

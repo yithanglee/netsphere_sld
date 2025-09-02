@@ -156,6 +156,7 @@ class App {
       { html: "terms_condition.html", title: "Terms Condition ", route: "/terms_condition", public: true, skipNav: true },
       { html: "merchant_code_register.html", title: "Register ", route: "/merchant_code_register/:share_code", public: true, skipNav: true },
       { html: "code_register.html", title: "Register ", route: "/code_register/:share_code", public: true, skipNav: true },
+      { html: "share_link.html", title: "Share Link ", route: "/share_link" },
       { html: "register_wallet.html", title: "Register Wallet ", route: "/register_wallet" },
       { html: "bonus_wallet.html", title: "Bonus Wallet ", route: "/bonus_wallet" },
       { html: "new_topup.html", title: "Register Point Topup ", route: "/topup_register_point" },

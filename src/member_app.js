@@ -161,26 +161,39 @@ export let memberApp_ = {
         console.log(j)
         if (j != null) {
           commerceApp_.emptyCart_()
-          if (j.payment_method == "fpx") {
-            function postRedirect(url, data) {
-              // Create a form element
-              var form = $('<form>', {
-                'method': 'POST',
-                'action': url
-              });
-              // Append input elements for each data key-value pair to the form
-              $.each(data, function(key, value) {
-                $('<input>', {
-                  'type': 'hidden',
-                  'name': key,
-                  'value': value
-                }).appendTo(form);
-              });
-              // Append the form to the body and submit it
-              form.appendTo('body').submit();
-            }
-            postRedirect(j.payment_url, JSON.parse(j.webhook_details));
-          }
+
+          // if (j.payment_method == "fpx") {
+          //   function postRedirect(url, data) {
+          //     // Create a form element
+          //     var form = $('<form>', {
+          //       'method': 'POST',
+          //       'action': url
+          //     });
+          //     // Append input elements for each data key-value pair to the form
+          //     $.each(data, function(key, value) {
+          //       $('<input>', {
+          //         'type': 'hidden',
+          //         'name': key,
+          //         'value': value
+          //       }).appendTo(form);
+          //     });
+          //     // Append the form to the body and submit it
+          //     form.appendTo('body').submit();
+          //   }
+          //   postRedirect(j.payment_url, JSON.parse(j.webhook_details));
+          // }
+
+          memberApp_.user = j
+          memberApp_.save(j)
+          $("[aria-label='login']").addClass("d-none")
+          $("[aria-label='logout']").removeClass("d-none")
+          phxApp_.navigateTo("/home")
+
+
+
+
+
+
         } else {
           commerceApp_.emptyCart_()
           phxApp_.navigateTo("/login")

@@ -583,12 +583,16 @@ export let phxApp_ = {
     if (localStorage.region != null) {
       langPrefix = evalCountry(localStorage.region)
     }
+    // langPrefix = "v2"
 
     var res = "";
+    // var url =  "/src/html/" + langPrefix + "/" + page
+    var url =  this.endpoint + "/html/" + langPrefix + "/" + page
+    console.log('url',url)
     $.ajax({
       async: false,
       method: "get",
-      url: this.endpoint + "/html/" + langPrefix + "/" + page
+      url: url 
     }).done((j) => {
       res = j
     })
@@ -694,7 +698,7 @@ export let phxApp_ = {
         if (failed_callback != null) {
           failed_callback()
         }
-        this.hide()
+        phxApp_.hide()
       }, 500)
 
     });
