@@ -3993,7 +3993,7 @@ export let commerceApp_ = {
               }
               $(v).customHtml(`
                             <div class="` + needDropUp + `  ">
-                                <div class="mx-3 py-2 btn btn-outline-success rounded-xl position-relative"  data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="mx-3 py-2 btn btn-outline-light text-white rounded-xl position-relative"  data-bs-toggle="dropdown" aria-expanded="false">
                                 <div style="top: 4px !important;" class="badge bg-warning position-absolute top-0 start-100 translate-middle bc">` + count + `</div>
                                 <i class="fa fa-shopping-cart"></i>
                                 </div>
@@ -4424,18 +4424,18 @@ export let commerceApp_ = {
 
               phxApp_.countries_.forEach((v, i) => {
                   countries.push(`
-          <button type="button" aria-name="` + v.name + `" aria-country="` + v.id + `" class="btn btn-primary ">` + v.name + ` ` + (v.alias || "") + `</button>
-        `)
+                                <button type="button" aria-name="` + v.name + `" aria-country="` + v.id + `" class="btn btn-primary ">` + v.name + ` ` + (v.alias || "") + `</button>
+                                `)
               })
               phxApp_.modal({
                   selector: "#mySubModal",
                   content: `
-        <center>
-          <div class="btn-group-vertical">
-          ` + countries.join("") + `
-          </div>
-        </center>
-      `,
+                            <center>
+                            <div class="btn-group-vertical">
+                            ` + countries.join("") + `
+                            </div>
+                            </center>
+                        `,
                   header: "Choose region",
                   autoClose: false
               })
@@ -4476,16 +4476,16 @@ export let commerceApp_ = {
 
                           $(".sponsor-bank").html(`
 
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-bold">Bank Details</span>
-              <span class=" my-4 me-4 d-flex justify-content-end align-items-end gap-1 flex-column">
-                <div>` + sponsor["user"]["bank_name"] + `</div>
-                <div>` + sponsor["user"]["bank_account_holder"] + `</div>
-                <div>` + sponsor["user"]["bank_account_no"] + `</div>
-              </span>
-            </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Bank Details</span>
+                                <span class=" my-4 me-4 d-flex justify-content-end align-items-end gap-1 flex-column">
+                                    <div>` + sponsor["user"]["bank_name"] + `</div>
+                                    <div>` + sponsor["user"]["bank_account_holder"] + `</div>
+                                    <div>` + sponsor["user"]["bank_account_no"] + `</div>
+                                </span>
+                                </div>
 
-              `)
+                                `)
 
                       })
                   } else {
@@ -4565,221 +4565,221 @@ export let commerceApp_ = {
               $("products").each((i, products) => {
 
                   $(products).customHtml(`
-          <div class="text-center mt-4">
-            <div class="spinner-border loading" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-          </div>
-            
+                        <div class="text-center mt-4">
+                            <div class="spinner-border loading" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                            
 
-          <div class="row gx-0 d-none loading">
-            <div class="col-12 col-lg-10 offset-lg-1">
-              <div id="product_tab1"></div>
-            </div>
-          </div>
-        `).then(() => {
-            console.log('products loading?')
+                        <div class="row gx-0 d-none loading">
+                            <div class="col-12 col-lg-10 offset-lg-1">
+                            <div id="product_tab1"></div>
+                            </div>
+                        </div>
+                        `).then(() => {
+                            console.log('products loading?')
 
-                      var customCols = null,
-                          random_id = 'products',
-                          productSource = new phoenixModel({
-                              onDrawFn: () => {
-
-
-
-                                  setTimeout(() => {
-                                      $("[product-id]").each((i, v) => {
-                                          v.onclick = () => {
-                                              addToCart2_(v)
-                                          }
-                                      })
-                                      ColumnFormater.formatDate()
-
-                                      $(".spinner-border.loading").parent().remove()
-                                      $(".loading").removeClass("d-none")
-                                  }, 800)
-
-                              },
-                              xcard: (params) => {
+                                    var customCols = null,
+                                        random_id = 'products',
+                                        productSource = new phoenixModel({
+                                            onDrawFn: () => {
 
 
 
-                                  var data = params.product,
-                                      showBtn = '',
-                                      img = '/images/placeholder.png',
-                                      onclickAttr = `onclick="phxApp.navigateTo('/products/` + data.id + `/` + data.name + `')"`;
+                                                setTimeout(() => {
+                                                    $("[product-id]").each((i, v) => {
+                                                        v.onclick = () => {
+                                                            addToCart2_(v)
+                                                        }
+                                                    })
+                                                    ColumnFormater.formatDate()
+
+                                                    $(".spinner-border.loading").parent().remove()
+                                                    $(".loading").removeClass("d-none")
+                                                }, 800)
+
+                                            },
+                                            xcard: (params) => {
 
 
-                                  if ($(products).attr("direct") != null) {
-                                      onclickAttr = ''
-                                      showBtn = `<div class="btn btn-outline-primary mt-4" product-id="` + data.id + `">Add</div>`
-                                  }
-                                  if (data.img_url != null) {
 
-                                      try {
-                                          img = data.img_url
-                                      } catch (e) {
-                                          img = '/images/placeholder.png'
-                                      }
-                                  }
+                                                var data = params.product,
+                                                    showBtn = '',
+                                                    img = '/images/placeholder.png',
+                                                    onclickAttr = `onclick="phxApp.navigateTo('/products/` + data.id + `/` + data.name + `')"`;
 
 
-                                  var rp = `<div class="font-sm fw-light text-secondary text-center ">RP <span class="format-float">` + data.retail_price + `</span></div>`
-                                  if (phxApp_.chosen_country_id_.name == "Malaysia") {
-                                      includeShippingTax = false
-                                  } else {
-                                      includeShippingTax = true
-                                  }
-                                  if (includeShippingTax) {
-                                      rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.1) + `</span> RP</div>`
+                                                if ($(products).attr("direct") != null) {
+                                                    onclickAttr = ''
+                                                    showBtn = `<div class="btn btn-outline-primary mt-4" product-id="` + data.id + `">Add</div>`
+                                                }
+                                                if (data.img_url != null) {
 
-                                      if (phxApp_.chosen_country_id_.name == "Singapore") {
-
-                                          rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.05) + `</span> RP</div>`
-                                      }
-
-                                      if (phxApp_.chosen_country_id_.name == "China" && ['DT2体验卡配套', 'DT2启动配套', '2张99次开机卡 DT2启动配套'].includes(data.name)) {
-
-                                          rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.00) + `</span> RP</div>`
+                                                    try {
+                                                        img = data.img_url
+                                                    } catch (e) {
+                                                        img = '/images/placeholder.png'
+                                                    }
+                                                }
 
 
-                                      }
+                                                var rp = `<div class=" text-primary text-center ">RP <span class="format-float">` + data.retail_price + `</span></div>`
+                                                if (phxApp_.chosen_country_id_.name == "Malaysia") {
+                                                    includeShippingTax = false
+                                                } else {
+                                                    includeShippingTax = true
+                                                }
+                                                if (includeShippingTax) {
+                                                    rp = `<div class="text-primary text-center "><span class="format-float">` + (data.retail_price * 1.1) + `</span> RP</div>`
 
-                                  }
-                                  if (!showRP) {
-                                      rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion) + `</span></div>`
+                                                    if (phxApp_.chosen_country_id_.name == "Singapore") {
 
-                                      if (phxApp_.chosen_country_id_.name == "Malaysia") {
-                                          includeShippingTax = false
-                                      } else {
-                                          includeShippingTax = true
-                                      }
-                                      if (includeShippingTax) {
-                                          rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion * 1.1) + `</span></div>`
+                                                        rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.05) + `</span> RP</div>`
+                                                    }
 
+                                                    if (phxApp_.chosen_country_id_.name == "China" && ['DT2体验卡配套', 'DT2启动配套', '2张99次开机卡 DT2启动配套'].includes(data.name)) {
 
-                                          if (phxApp_.chosen_country_id_.name == "Singapore") {
-
-                                              rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion * 1.05) + `</span></div>`
-                                          }
+                                                        rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.00) + `</span> RP</div>`
 
 
-                                      }
-                                  }
+                                                    }
+
+                                                }
+                                                if (!showRP) {
+                                                    rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion) + `</span></div>`
+
+                                                    if (phxApp_.chosen_country_id_.name == "Malaysia") {
+                                                        includeShippingTax = false
+                                                    } else {
+                                                        includeShippingTax = true
+                                                    }
+                                                    if (includeShippingTax) {
+                                                        rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion * 1.1) + `</span></div>`
 
 
-                                  var card = `
-          <div  class="m-2 d-flex flex-column gap-2" ` + onclickAttr + `>
-            <div  class="d-flex justify-content-center mb-4 py-4 background-p" 
-                  style="
-                    cursor: pointer;   
-                    position: relative; "
-                   >
-              <div class="rounded py-2 background-p" style="
-                
-                    width: 80%;
-                    filter: blur(4px);
-                    position: absolute;
-                    background-repeat: no-repeat;
-                    background-position: center;
-                    background-size: cover;
-                    background-image: url('` + img + `');
-                    
-                    ">
-              </div>
-              <div class="rounded py-2 foreground-p" style="
-                   
-                    width:  100%;
-                    z-index: 1;
-                    background-position: center;
-                    background-repeat: no-repeat;
-                    background-size: contain; 
-                    background-image: url('` + img + `');
-                    ">
-              </div>
-            </div>
-            <div class="d-flex flex-column justify-content-center gap-2 mt-4">
-              <div class="font-sm fw-bold text-center">` + data.name + `</div>
-               <div class="d-flex flex-column justify-content-center ">
-                  ` + rp + `
-                  <div class="font-sm fw-light text-info text-center pv_label d-none">PV <span class="format-float">` + data.point_value + `</span></div>
-               </div>
-               ` + showBtn + `
+                                                        if (phxApp_.chosen_country_id_.name == "Singapore") {
 
-           
-            </div>
-          </div>
-          `
-                                  return card
-                              },
-                              data: {
-                                  pageLength: 12,
-                                  sorts: [
-                                      [2, "desc"]
-                                  ],
-
-                                  additional_join_statements: [{
-                                      product: "product"
-                                          // product_country: "product_country",
-
-                                  }],
-                                  additional_search_queries: [
-                                      "b.is_instalment=false"
-                                  ],
-
-                                  country_id: phxApp_.chosen_country_id_.id,
-                                  preloads: ["product"],
-                                  grid_class: "col-4 col-lg-3",
-                                  dom: `
-
-                <"row px-4"
-                  <"col-lg-6 col-12"i>
-                  <"col-12 col-lg-6">
-                >
-                <"row grid_view ">
-                <"list_view d-none"t>
-                <"row transform-75 px-4"
-                  <"col-lg-6 col-12">
-                  <"col-lg-6 col-12"p>
-                >
-
-            `
-                              },
-                              columns: [
-
-                                  {
-                                      label: 'id',
-                                      data: 'id'
-                                  },
-
-                                  {
-                                      label: 'product_id',
-                                      data: 'product_id'
-                                  },
-
-                                  // {
-                                  //   label: 'retail_price',
-                                  //   data: 'retail_price'
-                                  // },
-
-                                  {
-                                      label: 'Action',
-                                      data: 'id'
-                                  }
-
-                              ],
-                              moduleName: "ProductCountry",
-                              link: "ProductCountry",
-                              customCols: customCols,
-                              buttons: [],
-                              tableSelector: "#" + random_id
-                          })
-                      productSource.load(random_id, "#product_tab1")
-
-                  })
+                                                            rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion * 1.05) + `</span></div>`
+                                                        }
 
 
-              })
+                                                    }
+                                                }
+
+
+                                                var card = `
+                                                            <div  class="m-2 d-flex flex-column gap-2" ` + onclickAttr + `>
+                                                                <div  class="d-flex justify-content-center mb-4 py-4 background-p" 
+                                                                    style="
+                                                                        cursor: pointer;   
+                                                                        position: relative; "
+                                                                    >
+                                                                <div class="rounded py-2 background-p" style="
+                                                                    
+                                                                        width: 80%;
+                                                                        filter: blur(4px);
+                                                                        position: absolute;
+                                                                        background-repeat: no-repeat;
+                                                                        background-position: center;
+                                                                        background-size: cover;
+                                                                        background-image: url('` + img + `');
+                                                                        
+                                                                        ">
+                                                                </div>
+                                                                <div class="rounded py-2 foreground-p" style="
+                                                                    
+                                                                        width:  100%;
+                                                                        z-index: 1;
+                                                                        background-position: center;
+                                                                        background-repeat: no-repeat;
+                                                                        background-size: contain; 
+                                                                        background-image: url('` + img + `');
+                                                                        ">
+                                                                </div>
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center gap-2 mt-4">
+                                                                <div class="font-sm fw-bold text-center">` + data.name + `</div>
+                                                                <div class="d-flex flex-column justify-content-center ">
+                                                                    ` + rp + `
+                                                                    <div class="font-sm fw-light text-info text-center pv_label d-none">PV <span class="format-float">` + data.point_value + `</span></div>
+                                                                </div>
+                                                                ` + showBtn + `
+
+                                                            
+                                                                </div>
+                                                            </div>
+                                                            `
+                                                return card
+                                            },
+                                            data: {
+                                                pageLength: 12,
+                                                sorts: [
+                                                    [2, "desc"]
+                                                ],
+
+                                                additional_join_statements: [{
+                                                    product: "product"
+                                                        // product_country: "product_country",
+
+                                                }],
+                                                additional_search_queries: [
+                                                    "b.is_instalment=false"
+                                                ],
+
+                                                country_id: phxApp_.chosen_country_id_.id,
+                                                preloads: ["product"],
+                                                grid_class: "col-6 col-lg-3",
+                                                dom: `
+
+                                                    <"row px-4"
+                                                    <"col-lg-6 col-12"i>
+                                                    <"col-12 col-lg-6">
+                                                    >
+                                                    <"row grid_view ">
+                                                    <"list_view d-none"t>
+                                                    <"row transform-75 px-4"
+                                                    <"col-lg-6 col-12">
+                                                    <"col-lg-6 col-12"p>
+                                                    >
+
+                                                `
+                                            },
+                                            columns: [
+
+                                                {
+                                                    label: 'id',
+                                                    data: 'id'
+                                                },
+
+                                                {
+                                                    label: 'product_id',
+                                                    data: 'product_id'
+                                                },
+
+                                                // {
+                                                //   label: 'retail_price',
+                                                //   data: 'retail_price'
+                                                // },
+
+                                                {
+                                                    label: 'Action',
+                                                    data: 'id'
+                                                }
+
+                                            ],
+                                            moduleName: "ProductCountry",
+                                            link: "ProductCountry",
+                                            customCols: customCols,
+                                            buttons: [],
+                                            tableSelector: "#" + random_id
+                                        })
+                                    productSource.load(random_id, "#product_tab1")
+
+                                })
+
+
+                            })
 
 
 

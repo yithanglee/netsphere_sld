@@ -141,6 +141,8 @@ class App {
 
   addRoutes() {
     const route_list = [
+      { html: "shipping_management.html", title: "Shipping Management ", route: "/shipping_management" },
+      { html: "commissions.html", title: "Commissions ", route: "/commissions" },
       { html: "merchant_withdrawal.html", title: "Merchant Withdrawal ", route: "/merchant_withdrawals" },
       { html: "merchant_application.html", title: "Merchant Application ", route: "/merchant_application" },
       { html: "merchant_profile.html", title: "Merchant Profile ", route: "/merchant_profile" },

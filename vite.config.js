@@ -14,6 +14,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false
         },
+        '/html': {
+          target: env.VITE_API_URL,
+          changeOrigin: true,
+          secure: false
+        },
         '/js': {
           target: env.VITE_API_URL,
           changeOrigin: true,
@@ -45,7 +50,7 @@ export default defineConfig(({ mode }) => {
       port: 5274,
       host: '127.0.0.1',
       open: true,
-      allowedHosts: ['netspheremall.com', 'www.netspheremall.com']
+      allowedHosts: ['netspheremall.com', 'www.netspheremall.com', 'localhost:4700']
     },
     build: {
       outDir: 'dist',

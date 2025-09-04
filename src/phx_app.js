@@ -206,7 +206,9 @@ export let phxApp_ = {
 
         } else {
           // location = "/logout"
+          // alert("logout")
           phxApp_.navigateTo("/logout")
+          return
         }
       }
 
@@ -587,7 +589,7 @@ export let phxApp_ = {
 
     var res = "";
     // var url =  "/src/html/" + langPrefix + "/" + page
-    var url =  this.endpoint + "/html/" + langPrefix + "/" + page
+    var url =   "/html/" + langPrefix + "/" + page
     console.log('url',url)
     $.ajax({
       async: false,
@@ -948,10 +950,10 @@ export let phxApp_ = {
         // code block
 
         input2 = `<div class="` + alt_class + `">
-                      <div class="ps-1 py-2">` + label_title + `</div>
+                      <div class="ps-0 py-0 text-secondary">` + label_title + `</div>
                       <div class="col-sm-12">
                         <div class="form-group bmd-form-group">
-                          <input type="text" aria-label="` + v + `" name="` + object + `[` + v + `]" class="form-control">
+                          <input type="text" aria-label="` + v + `" name="` + object + `[` + v + `]" class="form-control-plaintext">
                         </div>
                       </div>
                     </div>`
@@ -1042,10 +1044,10 @@ export let phxApp_ = {
         } else {
 
           input2 = `<div class="` + alt_class + `">
-                      <div class="ps-1 py-2">` + label_title + `</div>
+                      <div class="ps-0 py-0 text-secondary">` + label_title + `</div>
                       <div class="col-sm-12">
                         <div class="form-group bmd-form-group">
-                          <input type="text" aria-label="` + v + `" name="` + object + `[` + v + `]" class="form-control">
+                          <input type="text" aria-label="` + v + `" name="` + object + `[` + v + `]" class="form-control-plaintext">
                         </div>
                       </div>
                     </div>`
@@ -2484,7 +2486,7 @@ export let phxApp_ = {
   },
   editData(params) {
     console.log("editing data...")
-    var dt = params.dataSource;
+    var gParent, dt = params.dataSource;
     window.currentSelector = dt.tableSelector
     var table = dt.table;
     var r = table.row(params.row);
