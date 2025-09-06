@@ -2646,7 +2646,16 @@ export let commerceApp_ = {
             }
 
       },
-      evalShipping(subtotal) {
+      evalShipping(_subtotal){
+        var s =  commerceApp_.cart_.map((v, i) => {
+            return (v.qty * v.base_shipping_fee)
+        }).reduce((a, b) => {
+            return a + b
+        }, 0)
+
+        return s 
+      },
+      evalShippingLegacy(subtotal) {
           var is_merchant = $("cartItems").attr("merchant") == "" ? true : false;
           var s = 0
 
@@ -3742,7 +3751,7 @@ export let commerceApp_ = {
               </li>
              <li>                  
 
-             <a class="dropdown-item navi" href="/register">
+             <a class="dropdown-item navi" href="/upgrade">
                   <div class="d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-center">
                       <span>Checkout</span>
