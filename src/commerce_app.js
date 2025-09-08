@@ -2653,6 +2653,10 @@ export let commerceApp_ = {
             return a + b
         }, 0)
 
+        if ($("[name='user[pick_up_point_id]']").val() != "") {
+            s = 0
+        } 
+
         return s 
       },
       evalShippingLegacy(subtotal) {
@@ -2864,10 +2868,10 @@ export let commerceApp_ = {
                               autoClose: false,
                               selector: "#mySubModal",
                               content: `
-          <div class="d-flex flex-column">
-            ` + adds.join("") + `
-          </div>
-          `,
+                                            <div class="d-flex flex-column">
+                                                ` + adds.join("") + `
+                                            </div>
+                                            `,
                               header: "Change address"
                           })
                           $("[aria-address]").click(function() {
@@ -2984,49 +2988,49 @@ export let commerceApp_ = {
 
                   list.push(`
 
-          <div class="d-flex align-items-center justify-content-between gap-2 ` + linePassed + ` rounded p-2 me-3">
-         
-            <div class="d-flex align-items-center justify-content-between gap-2">
-              <div class="d-flex justify-content-center align-items-center " style="
-                                cursor: pointer;   
-                                position: relative; 
-                                height: 60px;">
-                <div class="rounded py-2" style="
-                                height: 50px;
-                                width: 72%;
-                                filter: blur(4px);
-                                position: absolute;
-                                background-repeat: no-repeat;
-                                background-position: center;
-                                background-size: cover;
-                                background-image: url('` + img + `');
-                                bottom: 6px;
-                                left: 16px;
-                                ">
-                </div>
-                <div class="rounded py-2" style="
-                                height: 50px;
-                                width:  60px;
-                                z-index: 1;
-                                background-position: center;
-                                background-repeat: no-repeat;
-                                background-size: cover; 
-                                background-image: url('` + img + `');
-                                ">
-                </div>
-              </div>
-              <span>` + v.name + ` <small>(x` + v.qty + `)</small> <br><small> <i class="fa fa-exclamation-triangle text-danger "></i>Product not available for this region</small></span>
-            </div>
-            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center">
-              
-              <div class="text-center">
-                <div class="btn btn-sm" delete-product-id="` + v.id + `"><i class="text-danger fa fa-times"></i></div>
-              </div>
-            </div>
-          </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2 ` + linePassed + ` rounded p-2 me-3">
+                                    
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <div class="d-flex justify-content-center align-items-center " style="
+                                                            cursor: pointer;   
+                                                            position: relative; 
+                                                            height: 60px;">
+                                            <div class="rounded py-2" style="
+                                                            height: 50px;
+                                                            width: 72%;
+                                                            filter: blur(4px);
+                                                            position: absolute;
+                                                            background-repeat: no-repeat;
+                                                            background-position: center;
+                                                            background-size: cover;
+                                                            background-image: url('` + img + `');
+                                                            bottom: 6px;
+                                                            left: 16px;
+                                                            ">
+                                            </div>
+                                            <div class="rounded py-2" style="
+                                                            height: 50px;
+                                                            width:  60px;
+                                                            z-index: 1;
+                                                            background-position: center;
+                                                            background-repeat: no-repeat;
+                                                            background-size: cover; 
+                                                            background-image: url('` + img + `');
+                                                            ">
+                                            </div>
+                                        </div>
+                                        <span>` + v.name + ` <small>(x` + v.qty + `)</small> <br><small> <i class="fa fa-exclamation-triangle text-danger "></i>Product not available for this region</small></span>
+                                        </div>
+                                        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center">
+                                        
+                                        <div class="text-center">
+                                            <div class="btn btn-sm" delete-product-id="` + v.id + `"><i class="text-danger fa fa-times"></i></div>
+                                        </div>
+                                        </div>
+                                    </div>
 
-        
-          `)
+                                    
+                                    `)
               } else {
 
                   if (v.override_pv) {
@@ -3166,10 +3170,7 @@ export let commerceApp_ = {
               shipping_fee = subtotal * 0.025
               shipping_fee = 0
           }
-
-
-
-
+      
           var currency = `RP`,
               srp = (subtotal + shipping_fee),
               cshipping_fee = shipping_fee,
