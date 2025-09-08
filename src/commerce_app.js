@@ -4291,7 +4291,7 @@ export let commerceApp_ = {
               var rp = `<div class="font-sm fw-light text-secondary text-center ">RP <span class="format-float">` + data.retail_price + `</span></div>`
               
               if (includeShippingTax) {
-                  rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.0) + ` </span> RP</div>`
+                  rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price + data.base_shipping_fee) + ` </span> RP</div>`
               }
 
 
