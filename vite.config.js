@@ -14,6 +14,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false
         },
+        '/pdf': {
+          target: env.VITE_API_URL,
+          changeOrigin: true,
+          secure: false
+        },
         '/html': {
           target: env.VITE_API_URL,
           changeOrigin: true,

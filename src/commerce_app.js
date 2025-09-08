@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // has to be done after rendering page, 
       // callback function to call this render
       var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
-          "light", "userProfile", "wallet", "crypto_wallet", "announcement", "products", "product",
+          "light", "userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
 
@@ -4634,35 +4634,19 @@ export let commerceApp_ = {
 
 
                                                 var rp = `<div class=" text-primary text-center ">RP <span class="format-float">` + data.retail_price + `</span></div>`
-                                                if (phxApp_.chosen_country_id_.name == "Malaysia") {
-                                                    includeShippingTax = false
-                                                } else {
-                                                    includeShippingTax = true
-                                                }
+                                                // if (phxApp_.chosen_country_id_.name == "Malaysia") {
+                                                //     includeShippingTax = false
+                                                // } else {
+                                                //     includeShippingTax = true
+                                                // }
                                                 if (includeShippingTax) {
-                                                    rp = `<div class="text-primary text-center "><span class="format-float">` + (data.retail_price * 1.1) + `</span> RP</div>`
+                                                    rp = `<div class="text-white text-center "><span class="format-float">` + (data.retail_price * 1.0) + `</span> RP</div>`
 
-                                                    if (phxApp_.chosen_country_id_.name == "Singapore") {
-
-                                                        rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.05) + `</span> RP</div>`
-                                                    }
-
-                                                    if (phxApp_.chosen_country_id_.name == "China" && ['DT2体验卡配套', 'DT2启动配套', '2张99次开机卡 DT2启动配套'].includes(data.name)) {
-
-                                                        rp = `<div class="font-sm fw-light text-secondary text-center "><span class="format-float">` + (data.retail_price * 1.00) + `</span> RP</div>`
-
-
-                                                    }
 
                                                 }
                                                 if (!showRP) {
-                                                    rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion) + `</span></div>`
+                                                    rp = `<div class="font-sm fw-light text-white text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion) + `</span></div>`
 
-                                                    if (phxApp_.chosen_country_id_.name == "Malaysia") {
-                                                        includeShippingTax = false
-                                                    } else {
-                                                        includeShippingTax = true
-                                                    }
                                                     if (includeShippingTax) {
                                                         rp = `<div class="font-sm fw-light text-secondary text-center ">MYR <span class="format-float">` + (data.retail_price * phxApp_.chosen_country_id_.conversion * 1.1) + `</span></div>`
 
@@ -4879,6 +4863,30 @@ export let commerceApp_ = {
           })
 
           $(".anc").slick()
+      },
+      bonusLimit() {
+
+
+        phxApp_.api("get_bonus_limit", {
+          token: memberApp_.user.token
+        }, null, (r) => {
+            var limit = Number(r.limit) || 0;
+            var accumulated = Number(r.accumulated) || 0;
+            var remaining = Math.max(0, limit - accumulated);
+            var percent = limit > 0 ? Math.min(100, Math.round((accumulated / limit) * 100)) : 0;
+
+            $("bonusLimit").customHtml(`
+                <div class="d-flex flex-column gap-2">
+                  <span> Remaining bonus: <span class="">` + remaining + `</span> BP</span>
+                  <div class="progress" role="progressbar" aria-valuenow="` + percent + `" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: ` + percent + `%;"></div>
+                  </div>
+                  <span>Please repurchase package, to increase earning limit.</span>
+                </div>
+              `)
+        })
+
+        
       },
       rewardList() {
 
