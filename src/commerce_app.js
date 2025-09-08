@@ -4622,7 +4622,7 @@ export let commerceApp_ = {
                                                 //     includeShippingTax = true
                                                 // }
                                                 if (includeShippingTax) {
-                                                    rp = `<div class="text-white text-center "><span class="format-float">` + (data.retail_price * 1.0) + `</span> RP</div>`
+                                                    rp = `<div class="text-white text-center "><span class="format-float">` + (data.retail_price + data.base_shipping_fee) + `</span> RP</div>`
 
 
                                                 }
