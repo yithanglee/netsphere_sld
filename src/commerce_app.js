@@ -995,7 +995,8 @@ export let commerceApp_ = {
           <div class="">
               <label class="my-2">Position</label>
               <select class="form-control" name="mposition">
-                <option>left</option>
+                <option>auto</option>
+              <option>left</option>
                 <option>right</option>
               </select>
               <div class="mt-4 btn btn-primary generate-mlink">Generate</div>
@@ -1011,6 +1012,7 @@ export let commerceApp_ = {
           <div class="">
               <label class="my-2">Position</label>
               <select class="form-control" name="position">
+                <option>auto</option>
                 <option>left</option>
                 <option>right</option>
               </select>
