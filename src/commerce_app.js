@@ -1397,7 +1397,7 @@ export let commerceApp_ = {
                     
                     <span>
                       <div>  </div>
-                      <div>3237 7779 07 <div class="btn btn-primary" onclick="phxApp.copyToClipboard('3237777907');selectedBank('PBB')">Copy</div></div>
+                      <div>0x3675cF9333f00188A99791be2fD612353bC54da8 <div class="btn btn-primary" onclick="phxApp.copyToClipboard('0x3675cF9333f00188A99791be2fD612353bC54da8');selectedBank('PBB')">Copy</div></div>
                     </span><br>
                   </div>
                 </section>
