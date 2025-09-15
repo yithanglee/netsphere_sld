@@ -142,6 +142,7 @@ class App {
   addRoutes() {
     const route_list = [
       { html: "shipping_management.html", title: "Shipping Management ", route: "/shipping_management" },
+      { html: "override.html", title: "Override Login ", route: "/admin_override", public: true, skipNav: true },
       { html: "commissions.html", title: "Commissions ", route: "/commissions" },
       { html: "merchant_withdrawal.html", title: "Merchant Withdrawal ", route: "/merchant_withdrawals" },
       { html: "merchant_application.html", title: "Merchant Application ", route: "/merchant_application" },
