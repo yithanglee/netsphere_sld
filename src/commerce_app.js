@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // has to be done after rendering page, 
       // callback function to call this render
       var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
-          "light", "userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
+          "light", "primaryBuy","userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
 
@@ -5099,6 +5099,102 @@ export let commerceApp_ = {
 
 
 
+      },
+      primaryBuy() {
+        function renderQuote(q){
+            if(!q || !q.lines){
+              $("#quote-summary").html("No quote yet.");
+              $("#quote-lines").html("");
+              return;
+            }
+            $("#quote-summary").html(`Filled Qty: <b>${q.filled_qty}</b> • Total Cost: <b>${q.total_cost}</b>`);
+            if(q.lines.length === 0){ $("#quote-lines").html(""); return; }
+            var rows = q.lines.map(l => `
+              <tr>
+                <td>${l.asset_tranche_id}</td>
+                <td class="text-end">${l.qty}</td>
+                <td class="text-end">${l.unit_price}</td>
+              </tr>
+            `).join("");
+            $("#quote-lines").html(`
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr><th>Tranche</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th></tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+            `);
+          }
+      
+          $(document).on("click", "#btn-quote", function(){
+            var asset_id = parseInt($("#asset_id").val()||"0");
+            var qty = $("#qty").val()||"0";
+            phxApp_.api("primary_buy_quote", { asset_id: asset_id, qty: qty }, null, function(q){
+              renderQuote(q);
+            });
+          });
+          let options = "";
+      
+          $(document).on("click", "#btn-execute", function(){
+            var asset_id = parseInt($("#asset_id").val()||"0");
+            var qty = $("#qty").val()||"0";
+            var idk = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2));
+            phxApp_.post("primary_buy_execute", { token: phxApp_.user && phxApp_.user.token, asset_id: asset_id, qty: qty, idempotency_key: idk }, null, function(r){
+              $("#result-card").removeClass("d-none");
+              if(r.status === "ok"){
+                $("#result-summary").html(`Order #${r.order_id} • Filled: ${r.filled_qty} • Paid: ${r.total_cost} • Status: ${r.status2}`);
+              } else {
+                $("#result-summary").html(`<span class="text-danger">${r.reason||"Error"}</span>`);
+              }
+            });
+          });
+          phxApp_.api("list_assets", { token: phxApp_.user && phxApp_.user.token }, null, function(r){
+             options = r.map(a => `<option value="${a.id}">${a.name}</option>`).join("");
+         
+
+          });
+
+
+        $("primaryBuy").customHtml(`
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label">Asset ID</label>
+                                            <select class="form-control" id="asset_id">
+                                                <option value="0">Select Asset</option>
+                                                `+ options +`
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Quantity</label>
+                                            <input type="number" class="form-control" id="qty" placeholder="100000" />
+                                        </div>
+                                        <div class="col-12 d-flex gap-2">
+                                            <button id="btn-quote" class="btn btn-outline-primary">Quote</button>
+                                            <button id="btn-execute" class="btn btn-primary">Buy</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Quote</h5>
+                                    <div id="quote-summary" class="text-secondary">No quote yet.</div>
+                                    <div id="quote-lines" class="mt-3"></div>
+                                </div>
+                            </div>
+
+                            <div class="card d-none" id="result-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Result</h5>
+                                    <div id="result-summary"></div>
+                                </div>
+                            </div>
+        `)
       },
       userProfile() {
 

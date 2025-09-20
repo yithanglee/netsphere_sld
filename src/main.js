@@ -141,6 +141,8 @@ class App {
 
   addRoutes() {
     const route_list = [
+      { html: "primary_buy.html", title: "Primary Buy ", route: "/primary_buy" },
+      { html: "ledger_entries.html", title: "Ledger Entries ", route: "/ledger_entries" },
       { html: "shipping_management.html", title: "Shipping Management ", route: "/shipping_management" },
       { html: "override.html", title: "Override Login ", route: "/admin_override", public: true, skipNav: true },
       { html: "commissions.html", title: "Commissions ", route: "/commissions" },
