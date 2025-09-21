@@ -9,6 +9,11 @@ export default defineConfig(({ mode }) => {
       port: 5274,
       open: true,
       proxy: {
+        '/api': {
+          target: env.VITE_API_URL,
+          changeOrigin: true,
+          secure: false
+        },
         '/css': {
           target: env.VITE_API_URL,
           changeOrigin: true,

@@ -5049,14 +5049,7 @@ export let commerceApp_ = {
             <a href="/wallets/` + wallet.id + `" class="navi" >
 
             <div class=" card mb-3 mb-lg-0">
-              <div style="
-                width: 4px;
-                position: absolute;
-                height: 100%;
-                background: rgb(251,254,253);
-                background: linear-gradient(45deg, rgb(86, 253, 197) 0%, rgb(218, 216, 216) 100%);
-
-              " class="card-body p-0 "></div>
+ 
               <div class="card-body p-1 py-2 " style="width: 220px;">
                 <div class="d-flex gap-1 align-items-center">
                   <div wallet-id="` + wallet.id + `" class="d-none d-lg-block mx-2 py-2 btn btn-outline-success rounded-xl">
@@ -5072,13 +5065,7 @@ export let commerceApp_ = {
                 </div>
               </div>
 
-              <div class="card-body p-0 d-none" style="
-
-                background: rgb(251,254,253);
-                background: linear-gradient(90deg, rgb(86, 253, 197) 0%, rgb(218, 216, 216) 100%);
-                height: 2px;
-
-              "></div>
+        
             </div>
             </a>
 

@@ -585,7 +585,7 @@ export let phxApp_ = {
     if (localStorage.region != null) {
       langPrefix = evalCountry(localStorage.region)
     }
-    // langPrefix = "v2"
+    langPrefix = "v2"
 
     var res = "";
     // var url =  "/src/html/" + langPrefix + "/" + page
