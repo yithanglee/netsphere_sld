@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // has to be done after rendering page, 
       // callback function to call this render
       var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
-          "light", "primaryBuy","userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
+          "light", "primaryBuy", "secondaryBuy", "userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
 
@@ -5181,6 +5181,280 @@ export let commerceApp_ = {
                                     <div id="result-summary"></div>
                                 </div>
                             </div>
+        `)
+      },
+      secondaryBuy() {
+        function renderMarketDepth(depth) {
+          if (!depth) {
+            $("#market-depth").html("Loading market data...");
+            return;
+          }
+          
+          let sellRows = depth.sell_orders.map(order => `
+            <tr>
+              <td class="text-end">${order.quantity}</td>
+              <td class="text-end text-danger">${order.price_per_unit}</td>
+              <td class="text-end">${order.user.username}</td>
+            </tr>
+          `).join("");
+          
+          let buyRows = depth.buy_orders.map(order => `
+            <tr>
+              <td class="text-end">${order.quantity}</td>
+              <td class="text-end text-success">${order.price_per_unit}</td>
+              <td class="text-end">${order.user.username}</td>
+            </tr>
+          `).join("");
+          
+          $("#market-depth").html(`
+            <div class="row">
+              <div class="col-6">
+                <h6 class="text-danger">Sell Orders</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped">
+                    <thead>
+                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th></tr>
+                    </thead>
+                    <tbody>${sellRows || '<tr><td colspan="3" class="text-center text-muted">No sell orders</td></tr>'}</tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="col-6">
+                <h6 class="text-success">Buy Orders</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped">
+                    <thead>
+                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th></tr>
+                    </thead>
+                    <tbody>${buyRows || '<tr><td colspan="3" class="text-center text-muted">No buy orders</td></tr>'}</tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          `);
+        }
+        
+        function renderRecentTrades(trades) {
+          if (!trades || trades.length === 0) {
+            $("#recent-trades").html('<div class="text-center text-muted">No recent trades</div>');
+            return;
+          }
+          
+          let rows = trades.map(trade => `
+            <tr>
+              <td>${new Date(trade.trade_date).toLocaleString()}</td>
+              <td class="text-end">${trade.quantity}</td>
+              <td class="text-end">${trade.price_per_unit}</td>
+              <td class="text-end">${trade.total_amount}</td>
+              <td class="text-end">${trade.buyer.username}</td>
+              <td class="text-end">${trade.seller.username}</td>
+            </tr>
+          `).join("");
+          
+          $("#recent-trades").html(`
+            <div class="table-responsive">
+              <table class="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th class="text-end">Qty</th>
+                    <th class="text-end">Price</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Buyer</th>
+                    <th class="text-end">Seller</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          `);
+        }
+        
+        // Load market data when asset is selected
+        $(document).on("change", "#sm_asset_id", function(){
+          var asset_id = parseInt($(this).val() || "0");
+          if (asset_id > 0) {
+            // Load market depth
+            phxApp_.api("get_market_depth", { asset_id: asset_id }, null, function(depth){
+              renderMarketDepth(depth);
+            });
+            
+            // Load recent trades
+            phxApp_.api("get_recent_trades", { asset_id: asset_id }, null, function(trades){
+              renderRecentTrades(trades);
+            });
+          } else {
+            $("#market-depth").html("");
+            $("#recent-trades").html("");
+          }
+        });
+        
+        // Create sell order
+        $(document).on("click", "#btn-create-sell", function(){
+          var asset_id = parseInt($("#sm_asset_id").val() || "0");
+          var quantity = parseFloat($("#sm_sell_qty").val() || "0");
+          var price = parseFloat($("#sm_sell_price").val() || "0");
+          
+          if (asset_id === 0 || quantity <= 0 || price <= 0) {
+            alert("Please fill in all fields with valid values");
+            return;
+          }
+          
+          phxApp_.api("create_sell_order", { 
+            token: phxApp_.user && phxApp_.user.token,
+            asset_id: asset_id, 
+            quantity: quantity, 
+            price_per_unit: price 
+          }, null, function(r){
+            if (r.status === "ok") {
+              $("#sell-result").html(`<div class="alert alert-success">Sell order created successfully! Order ID: ${r.order_id}</div>`);
+              // Refresh market data
+              $("#sm_asset_id").trigger("change");
+              // Clear form
+              $("#sm_sell_qty, #sm_sell_price").val("");
+            } else {
+              $("#sell-result").html(`<div class="alert alert-danger">Error: ${r.reason || "Failed to create sell order"}</div>`);
+            }
+          });
+        });
+        
+        // Create buy order
+        $(document).on("click", "#btn-create-buy", function(){
+          var asset_id = parseInt($("#sm_asset_id").val() || "0");
+          var quantity = parseFloat($("#sm_buy_qty").val() || "0");
+          var price = parseFloat($("#sm_buy_price").val() || "0");
+          
+          if (asset_id === 0 || quantity <= 0 || price <= 0) {
+            alert("Please fill in all fields with valid values");
+            return;
+          }
+          
+          phxApp_.api("create_buy_order", { 
+            token: phxApp_.user && phxApp_.user.token,
+            asset_id: asset_id, 
+            quantity: quantity, 
+            price_per_unit: price 
+          }, null, function(r){
+            if (r.status === "ok") {
+              $("#buy-result").html(`<div class="alert alert-success">Buy order created successfully! Order ID: ${r.order_id}</div>`);
+              // Refresh market data
+              $("#sm_asset_id").trigger("change");
+              // Clear form
+              $("#sm_buy_qty, #sm_buy_price").val("");
+            } else {
+              $("#buy-result").html(`<div class="alert alert-danger">Error: ${r.reason || "Failed to create buy order"}</div>`);
+            }
+          });
+        });
+        
+        // Load assets for dropdown
+        let smOptions = "";
+        phxApp_.api("list_assets", { token: phxApp_.user && phxApp_.user.token }, null, function(r){
+          smOptions = r.map(a => `<option value="${a.id}">${a.name}</option>`).join("");
+        });
+
+        $("secondaryBuy").customHtml(`
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">Secondary Market</h5>
+                  <small class="text-muted">Trade your staked assets with other users</small>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">Select Asset</label>
+                      <select class="form-select" id="sm_asset_id">
+                        <option value="0">Choose an asset to trade</option>
+                        ${smOptions}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-6">
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h6 class="card-title mb-0 text-danger">Create Sell Order</h6>
+                  <small class="text-muted">Sell your active tokens for cash</small>
+                </div>
+                <div class="card-body">
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label">Quantity</label>
+                      <input type="number" class="form-control" id="sm_sell_qty" placeholder="Enter quantity" step="0.01" />
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Price per Unit</label>
+                      <input type="number" class="form-control" id="sm_sell_price" placeholder="Enter price per unit" step="0.01" />
+                    </div>
+                    <div class="col-12">
+                      <button id="btn-create-sell" class="btn btn-danger w-100">Create Sell Order</button>
+                    </div>
+                  </div>
+                  <div id="sell-result" class="mt-2"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-6">
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h6 class="card-title mb-0 text-success">Create Buy Order</h6>
+                  <small class="text-muted">Buy active tokens with cash</small>
+                </div>
+                <div class="card-body">
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label">Quantity</label>
+                      <input type="number" class="form-control" id="sm_buy_qty" placeholder="Enter quantity" step="0.01" />
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Price per Unit</label>
+                      <input type="number" class="form-control" id="sm_buy_price" placeholder="Enter price per unit" step="0.01" />
+                    </div>
+                    <div class="col-12">
+                      <button id="btn-create-buy" class="btn btn-success w-100">Create Buy Order</button>
+                    </div>
+                  </div>
+                  <div id="buy-result" class="mt-2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h6 class="card-title mb-0">Market Depth</h6>
+                  <small class="text-muted">Current buy and sell orders</small>
+                </div>
+                <div class="card-body">
+                  <div id="market-depth" class="text-center text-muted">Select an asset to view market depth</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="card-title mb-0">Recent Trades</h6>
+                  <small class="text-muted">Latest completed trades</small>
+                </div>
+                <div class="card-body">
+                  <div id="recent-trades" class="text-center text-muted">Select an asset to view recent trades</div>
+                </div>
+              </div>
+            </div>
+          </div>
         `)
       },
       userProfile() {
