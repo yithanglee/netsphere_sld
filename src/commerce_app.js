@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // has to be done after rendering page, 
       // callback function to call this render
       var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
-          "light", "primaryBuy", "secondaryBuy", "userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
+          "light", "primaryBuy", "secondaryBuy", "assetTranches","userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
 
@@ -5167,7 +5167,7 @@ export let commerceApp_ = {
                                 </div>
                             </div>
 
-                            <div class="card">
+                            <div class="card mt-4">
                                 <div class="card-body">
                                     <h5 class="card-title">Quote</h5>
                                     <div id="quote-summary" class="text-secondary">No quote yet.</div>
@@ -5175,7 +5175,7 @@ export let commerceApp_ = {
                                 </div>
                             </div>
 
-                            <div class="card d-none" id="result-card">
+                            <div class="card d-none mt-4" id="result-card">
                                 <div class="card-body">
                                     <h5 class="card-title">Result</h5>
                                     <div id="result-summary"></div>
@@ -5456,6 +5456,68 @@ export let commerceApp_ = {
             </div>
           </div>
         `)
+      },
+      assetTranches(){
+        $("assetTranches").customHtml(`
+            <div class="row">
+              <div class="col-12">
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div id="asset-tranches" class="text-center text-muted">Loading asset tranches...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `)
+
+        phxApp_.api("list_asset_tranches", { token: phxApp_.user && phxApp_.user.token }, null, function(r){
+
+            let list = []
+
+            r.forEach(item => {
+                list.push(`
+                    <tr>
+                        <td>#${item.seq}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.quantity - item.qty_sold}</td>
+                        <td>${item.unit_price}</td>
+                        <td><span class="badge bg-secondary">${item.state}</span></td>
+                    </tr>
+                `)
+            })
+
+
+          $("assetTranches").customHtml(`
+            <div class="row">
+                <div class="col-12">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Asset Tranches</h6>
+                            <small class="text-muted">Current tranches</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">Tranche</th>
+                                            <th scope="col">Quantity</th>
+                                            <th scope="col">Available</th>
+                                            <th scope="col">Unit Price</th>
+                                            <th scope="col">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        `+ list.join("") +`
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `)
+        });
       },
       userProfile() {
 
