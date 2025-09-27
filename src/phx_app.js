@@ -205,13 +205,16 @@ export let phxApp_ = {
         if (memberApp_.user != null) {
           // need to specifically move member back to landing page
           if (match_2[0].route == "/share_link") {
-            phxApp_.toast({
-              content: "Please upgrade package to access this page",
-              header: "Unauthorized",
-              type: "danger"
-            })
-            phxApp_.navigateTo("/")
-            return
+            if (memberApp_.user.rank.name == "Shopper") {
+              phxApp_.toast({
+                content: "Please upgrade package to access this page",
+                header: "Unauthorized",
+                type: "danger"
+              })
+              phxApp_.navigateTo("/")
+              return
+            }
+            
             
           } else {
            
