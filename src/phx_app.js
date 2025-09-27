@@ -200,9 +200,26 @@ export let phxApp_ = {
 
       } else {
         await memberApp_.restoreUser()
-        console.log("resting?")
+        console.log("resting?", match_2[0].route)
 
         if (memberApp_.user != null) {
+          // need to specifically move member back to landing page
+          if (match_2[0].route == "/share_link") {
+            if (memberApp_.user.rank.name == "Shopper") {
+              phxApp_.toast({
+                content: "Please upgrade package to access this page",
+                header: "Unauthorized",
+                type: "danger"
+              })
+              phxApp_.navigateTo("/")
+              return
+            }
+            
+            
+          } else {
+           
+          }
+
 
         } else {
           // location = "/logout"
@@ -585,7 +602,7 @@ export let phxApp_ = {
     if (localStorage.region != null) {
       langPrefix = evalCountry(localStorage.region)
     }
-    // langPrefix = "v2"
+    langPrefix = "v2"
 
     var res = "";
     // var url =  "/src/html/" + langPrefix + "/" + page
