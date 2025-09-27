@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
       port: 5274,
       host: '127.0.0.1',
       open: true,
-      allowedHosts: ['netspheremall.com', 'www.netspheremall.com', 'localhost:4700']
+      allowedHosts: ['netspheremall.com', 'www.netspheremall.com', 'netspheremall.damienslab.com', 'localhost:4700']
     },
     build: {
       outDir: 'dist',
