@@ -5269,24 +5269,42 @@ export let commerceApp_ = {
             </div>
           `);
         }
-        
+
+        function loadData(){
+            var asset_id = parseInt($("#sm_asset_id").val() || "0");
+            if (asset_id > 0) {
+              // Load market depth
+              phxApp_.api("get_market_depth", { asset_id: asset_id }, null, function(depth){
+                renderMarketDepth(depth);
+              });
+              
+              // Load recent trades
+              phxApp_.api("get_recent_trades", { asset_id: asset_id }, null, function(trades){
+                renderRecentTrades(trades);
+              });
+            } else {
+              $("#market-depth").html("");
+              $("#recent-trades").html("");
+            }
+        }        
         // Load market data when asset is selected
         $(document).on("change", "#sm_asset_id", function(){
-          var asset_id = parseInt($(this).val() || "0");
-          if (asset_id > 0) {
-            // Load market depth
-            phxApp_.api("get_market_depth", { asset_id: asset_id }, null, function(depth){
-              renderMarketDepth(depth);
-            });
-            
-            // Load recent trades
-            phxApp_.api("get_recent_trades", { asset_id: asset_id }, null, function(trades){
-              renderRecentTrades(trades);
-            });
-          } else {
-            $("#market-depth").html("");
-            $("#recent-trades").html("");
-          }
+            var asset_id = parseInt($(this).val() || "0");
+            if (asset_id > 0) {
+              // Load market depth
+              phxApp_.api("get_market_depth", { asset_id: asset_id }, null, function(depth){
+                renderMarketDepth(depth);
+              });
+              
+              // Load recent trades
+              phxApp_.api("get_recent_trades", { asset_id: asset_id }, null, function(trades){
+                renderRecentTrades(trades);
+              });
+            } else {
+              $("#market-depth").html("");
+              $("#recent-trades").html("");
+            }
+         
         });
         
         // Create sell order
@@ -5456,6 +5474,11 @@ export let commerceApp_ = {
             </div>
           </div>
         `)
+
+        $("select#sm_asset_id").val(1);
+        loadData();
+
+
       },
       assetTranches(){
         $("assetTranches").customHtml(`
