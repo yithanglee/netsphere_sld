@@ -5470,7 +5470,7 @@ export let commerceApp_ = {
             </div>
           `)
 
-        phxApp_.api("list_asset_tranches", { token: phxApp_.user && phxApp_.user.token }, null, function(r){
+        phxApp_.api("secondary_qty_by_price_with_tranche", { token: phxApp_.user && phxApp_.user.token }, null, function(r){
 
             let list = []
 
@@ -5478,10 +5478,12 @@ export let commerceApp_ = {
                 list.push(`
                     <tr>
                         <td>#${item.seq}</td>
-                        <td>${item.quantity}</td>
-                        <td>${item.quantity - item.qty_sold}</td>
+                        <td>${item.total_quantity}</td>
+                        <td>${item.company_traded}</td>
+                        <td>${item.member_traded}</td>
+                        <td>${item.total_traded}</td>
                         <td>${item.unit_price}</td>
-                        <td><span class="badge bg-secondary">${item.state}</span></td>
+                        
                     </tr>
                 `)
             })
@@ -5501,10 +5503,13 @@ export let commerceApp_ = {
                                     <thead class="table-light">
                                         <tr>
                                             <th scope="col">Tranche</th>
-                                            <th scope="col">Quantity</th>
-                                            <th scope="col">Available</th>
+                                            <th scope="col">Total Quantity</th>
+                                            <th scope="col">Company Traded</th>
+                                            <th scope="col">Members Traded</th>
+                                            <th scope="col">Total Traded</th>
+                                            
                                             <th scope="col">Unit Price</th>
-                                            <th scope="col">Status</th>
+                                            
                                         </tr>
                                     </thead>
                                     <tbody>
