@@ -5208,7 +5208,7 @@ export let commerceApp_ = {
           
           $("#market-depth").html(`
             <div class="row">
-              <div class="col-6">
+              <div class="col-12 col-lg-6">
                 <h6 class="text-danger">Sell Orders</h6>
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
@@ -5219,7 +5219,7 @@ export let commerceApp_ = {
                   </table>
                 </div>
               </div>
-              <div class="col-6">
+              <div class="col-12 col-lg-6">
                 <h6 class="text-success">Buy Orders</h6>
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
@@ -5395,7 +5395,7 @@ export let commerceApp_ = {
           </div>
 
           <div class="row">
-            <div class="col-6">
+            <div class="col-12 col-lg-6">
               <div class="card mb-3">
                 <div class="card-header">
                   <h6 class="card-title mb-0 text-danger">Create Sell Order</h6>
@@ -5420,7 +5420,7 @@ export let commerceApp_ = {
               </div>
             </div>
             
-            <div class="col-6">
+            <div class="col-12 col-lg-6">
               <div class="card mb-3">
                 <div class="card-header">
                   <h6 class="card-title mb-0 text-success">Create Buy Order</h6>
