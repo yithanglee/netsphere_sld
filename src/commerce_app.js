@@ -5098,7 +5098,7 @@ export let commerceApp_ = {
             if(q.lines.length === 0){ $("#quote-lines").html(""); return; }
             var rows = q.lines.map(l => `
               <tr>
-                <td>${l.asset_tranche_id}</td>
+                <td>#${l.seq}</td>
                 <td class="text-end">${l.qty}</td>
                 <td class="text-end">${l.unit_price}</td>
               </tr>
@@ -5501,11 +5501,14 @@ export let commerceApp_ = {
                 list.push(`
                     <tr>
                         <td>#${item.seq}</td>
-                        <td>${item.total_quantity}</td>
+                        <td>${item.unit_price}</td>
+                           <td>${item.total_quantity}</td>
+                        <td>${item.total_quantity - (item.total_traded)}</td>
+                     
                         <td>${item.company_traded}</td>
                         <td>${item.member_traded}</td>
-                        <td>${item.total_traded}</td>
-                        <td>${item.unit_price}</td>
+                     
+                        
                         
                     </tr>
                 `)
@@ -5526,12 +5529,14 @@ export let commerceApp_ = {
                                     <thead class="table-light">
                                         <tr>
                                             <th scope="col">Tranche</th>
+                                             <th scope="col">Unit Price</th>
                                             <th scope="col">Total Quantity</th>
+                                            <th scope="col">Balance</th>
                                             <th scope="col">Company Traded</th>
                                             <th scope="col">Members Traded</th>
-                                            <th scope="col">Total Traded</th>
                                             
-                                            <th scope="col">Unit Price</th>
+                                            
+                                           
                                             
                                         </tr>
                                     </thead>
