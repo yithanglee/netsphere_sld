@@ -5189,20 +5189,43 @@ export let commerceApp_ = {
             $("#market-depth").html("Loading market data...");
             return;
           }
+
+
+
           
-          let sellRows = depth.sell_orders.map(order => `
+
+          
+            let sellRows = depth.sell_orders.map(order => {
+
+                let cancelBtn  = '';
+                if (phxApp_.user && phxApp_.user.id) {
+                    if (phxApp_.user.id == order.user.id) {
+                        cancelBtn = `<div class="btn btn-sm btn-danger cancel-order" id="cancel-sell-${order.id}" style="padding: 4px 12px !important;">Cancel</div>`;
+                    }
+
+                }
+
+        return        `
             <tr>
               <td class="text-end">${order.quantity}</td>
               <td class="text-end text-danger">${order.price_per_unit}</td>
               <td class="text-end">${order.user.username}</td>
+              <td>
+
+                ${cancelBtn}
+              </td>
             </tr>
-          `).join("");
+          `
+            }
+
+            ).join("");
           
           let buyRows = depth.buy_orders.map(order => `
             <tr>
               <td class="text-end">${order.quantity}</td>
               <td class="text-end text-success">${order.price_per_unit}</td>
               <td class="text-end">${order.user.username}</td>
+              <td></td>
             </tr>
           `).join("");
           
@@ -5213,9 +5236,9 @@ export let commerceApp_ = {
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
                     <thead>
-                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th></tr>
+                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th><td></td></tr>
                     </thead>
-                    <tbody>${sellRows || '<tr><td colspan="3" class="text-center text-muted">No sell orders</td></tr>'}</tbody>
+                    <tbody>${sellRows || '<tr><td colspan="4" class="text-center text-muted">No sell orders</td></tr>'}</tbody>
                   </table>
                 </div>
               </div>
@@ -5224,15 +5247,54 @@ export let commerceApp_ = {
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
                     <thead>
-                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th></tr>
+                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th><td></td></tr>
                     </thead>
-                    <tbody>${buyRows || '<tr><td colspan="3" class="text-center text-muted">No buy orders</td></tr>'}</tbody>
+                    <tbody>${buyRows || '<tr><td colspan="4" class="text-center text-muted">No buy orders</td></tr>'}</tbody>
                   </table>
                 </div>
               </div>
             </div>
           `);
         }
+        function cancelSellOrder(orderId){
+          phxApp_.post("cancel_order", {
+            token: phxApp_.user && phxApp_.user.token,
+            order_id: orderId,
+            user_id: phxApp_.user && phxApp_.user.id
+          }, null, function(r){
+            if (r.status === "ok") {
+              $("#mySubModal").modal("hide");
+              $("#cancel-sell-" + orderId).remove();
+            //   $("#sm_asset_id").trigger("change");
+              phxApp_.notify("Sell order cancelled successfully");
+            } else {
+              phxApp_.notify("Failed to cancel sell order", {
+                type: "danger"
+              });
+            }
+          });
+        }
+
+        $(document).on("click", ".cancel-order", function(){
+          var orderId = $(this).attr("id").split("-")[2];
+
+          phxApp_.modal({
+            selector: "#mySubModal",
+            content: `
+              <center>
+              <p>Cancel this order?</p>
+                <div class="btn-group-vertical">
+                    <button class="btn btn-danger" id="btn-cancel-sell-${orderId}">Cancel</button>
+                </div>
+              </center>
+            `,
+            header: "Cancel Order",
+            autoClose: false
+        })
+        $(document).on("click", "#btn-cancel-sell-" + orderId, function(){
+          cancelSellOrder(orderId);
+        });
+        });
         
         function renderRecentTrades(trades) {
           if (!trades || trades.length === 0) {
@@ -5325,7 +5387,9 @@ export let commerceApp_ = {
             price_per_unit: price 
           }, null, function(r){
             if (r.status === "ok") {
-              $("#sell-result").html(`<div class="alert alert-success">Sell order created successfully! Order ID: ${r.order_id}</div>`);
+            //   $("#sell-result").html(`<div class="alert alert-success">Sell order created successfully! Order ID: ${r.order_id}</div>`);
+
+              phxApp_.notify("Sell order created successfully! Order ID: " + r.res.id);
               // Refresh market data
               $("#sm_asset_id").trigger("change");
               // Clear form
