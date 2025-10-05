@@ -5098,7 +5098,7 @@ export let commerceApp_ = {
             if(q.lines.length === 0){ $("#quote-lines").html(""); return; }
             var rows = q.lines.map(l => `
               <tr>
-                <td>${l.asset_tranche_id}</td>
+                <td>#${l.seq}</td>
                 <td class="text-end">${l.qty}</td>
                 <td class="text-end">${l.unit_price}</td>
               </tr>
@@ -5189,50 +5189,112 @@ export let commerceApp_ = {
             $("#market-depth").html("Loading market data...");
             return;
           }
+
+
+
           
-          let sellRows = depth.sell_orders.map(order => `
+
+          
+            let sellRows = depth.sell_orders.map(order => {
+
+                let cancelBtn  = '';
+                if (phxApp_.user && phxApp_.user.id) {
+                    if (phxApp_.user.id == order.user.id) {
+                        cancelBtn = `<div class="btn btn-sm btn-danger cancel-order" id="cancel-sell-${order.id}" style="padding: 4px 12px !important;">Cancel</div>`;
+                    }
+
+                }
+
+        return        `
             <tr>
               <td class="text-end">${order.quantity}</td>
               <td class="text-end text-danger">${order.price_per_unit}</td>
               <td class="text-end">${order.user.username}</td>
+              <td>
+
+                ${cancelBtn}
+              </td>
             </tr>
-          `).join("");
+          `
+            }
+
+            ).join("");
           
           let buyRows = depth.buy_orders.map(order => `
             <tr>
               <td class="text-end">${order.quantity}</td>
               <td class="text-end text-success">${order.price_per_unit}</td>
               <td class="text-end">${order.user.username}</td>
+              <td></td>
             </tr>
           `).join("");
           
           $("#market-depth").html(`
             <div class="row">
-              <div class="col-6">
+              <div class="col-12 col-lg-6">
                 <h6 class="text-danger">Sell Orders</h6>
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
                     <thead>
-                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th></tr>
+                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th><td></td></tr>
                     </thead>
-                    <tbody>${sellRows || '<tr><td colspan="3" class="text-center text-muted">No sell orders</td></tr>'}</tbody>
+                    <tbody>${sellRows || '<tr><td colspan="4" class="text-center text-muted">No sell orders</td></tr>'}</tbody>
                   </table>
                 </div>
               </div>
-              <div class="col-6">
+              <div class="col-12 col-lg-6">
                 <h6 class="text-success">Buy Orders</h6>
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
                     <thead>
-                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th></tr>
+                      <tr><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">User</th><td></td></tr>
                     </thead>
-                    <tbody>${buyRows || '<tr><td colspan="3" class="text-center text-muted">No buy orders</td></tr>'}</tbody>
+                    <tbody>${buyRows || '<tr><td colspan="4" class="text-center text-muted">No buy orders</td></tr>'}</tbody>
                   </table>
                 </div>
               </div>
             </div>
           `);
         }
+        function cancelSellOrder(orderId){
+          phxApp_.post("cancel_order", {
+            token: phxApp_.user && phxApp_.user.token,
+            order_id: orderId,
+            user_id: phxApp_.user && phxApp_.user.id
+          }, null, function(r){
+            if (r.status === "ok") {
+              $("#mySubModal").modal("hide");
+              $("#cancel-sell-" + orderId).remove();
+            //   $("#sm_asset_id").trigger("change");
+              phxApp_.notify("Sell order cancelled successfully");
+            } else {
+              phxApp_.notify("Failed to cancel sell order", {
+                type: "danger"
+              });
+            }
+          });
+        }
+
+        $(document).on("click", ".cancel-order", function(){
+          var orderId = $(this).attr("id").split("-")[2];
+
+          phxApp_.modal({
+            selector: "#mySubModal",
+            content: `
+              <center>
+              <p>Cancel this order?</p>
+                <div class="btn-group-vertical">
+                    <button class="btn btn-danger" id="btn-cancel-sell-${orderId}">Cancel</button>
+                </div>
+              </center>
+            `,
+            header: "Cancel Order",
+            autoClose: false
+        })
+        $(document).on("click", "#btn-cancel-sell-" + orderId, function(){
+          cancelSellOrder(orderId);
+        });
+        });
         
         function renderRecentTrades(trades) {
           if (!trades || trades.length === 0) {
@@ -5269,24 +5331,42 @@ export let commerceApp_ = {
             </div>
           `);
         }
-        
+
+        function loadData(){
+            var asset_id = parseInt($("#sm_asset_id").val() || "0");
+            if (asset_id > 0) {
+              // Load market depth
+              phxApp_.api("get_market_depth", { asset_id: asset_id }, null, function(depth){
+                renderMarketDepth(depth);
+              });
+              
+              // Load recent trades
+              phxApp_.api("get_recent_trades", { asset_id: asset_id }, null, function(trades){
+                renderRecentTrades(trades);
+              });
+            } else {
+              $("#market-depth").html("");
+              $("#recent-trades").html("");
+            }
+        }        
         // Load market data when asset is selected
         $(document).on("change", "#sm_asset_id", function(){
-          var asset_id = parseInt($(this).val() || "0");
-          if (asset_id > 0) {
-            // Load market depth
-            phxApp_.api("get_market_depth", { asset_id: asset_id }, null, function(depth){
-              renderMarketDepth(depth);
-            });
-            
-            // Load recent trades
-            phxApp_.api("get_recent_trades", { asset_id: asset_id }, null, function(trades){
-              renderRecentTrades(trades);
-            });
-          } else {
-            $("#market-depth").html("");
-            $("#recent-trades").html("");
-          }
+            var asset_id = parseInt($(this).val() || "0");
+            if (asset_id > 0) {
+              // Load market depth
+              phxApp_.api("get_market_depth", { asset_id: asset_id }, null, function(depth){
+                renderMarketDepth(depth);
+              });
+              
+              // Load recent trades
+              phxApp_.api("get_recent_trades", { asset_id: asset_id }, null, function(trades){
+                renderRecentTrades(trades);
+              });
+            } else {
+              $("#market-depth").html("");
+              $("#recent-trades").html("");
+            }
+         
         });
         
         // Create sell order
@@ -5307,7 +5387,9 @@ export let commerceApp_ = {
             price_per_unit: price 
           }, null, function(r){
             if (r.status === "ok") {
-              $("#sell-result").html(`<div class="alert alert-success">Sell order created successfully! Order ID: ${r.order_id}</div>`);
+            //   $("#sell-result").html(`<div class="alert alert-success">Sell order created successfully! Order ID: ${r.order_id}</div>`);
+
+              phxApp_.notify("Sell order created successfully! Order ID: " + r.res.id);
               // Refresh market data
               $("#sm_asset_id").trigger("change");
               // Clear form
@@ -5377,7 +5459,7 @@ export let commerceApp_ = {
           </div>
 
           <div class="row">
-            <div class="col-6">
+            <div class="col-12 col-lg-6">
               <div class="card mb-3">
                 <div class="card-header">
                   <h6 class="card-title mb-0 text-danger">Create Sell Order</h6>
@@ -5402,7 +5484,7 @@ export let commerceApp_ = {
               </div>
             </div>
             
-            <div class="col-6">
+            <div class="col-12 col-lg-6">
               <div class="card mb-3">
                 <div class="card-header">
                   <h6 class="card-title mb-0 text-success">Create Buy Order</h6>
@@ -5456,6 +5538,11 @@ export let commerceApp_ = {
             </div>
           </div>
         `)
+
+        $("select#sm_asset_id").val(1);
+        loadData();
+
+
       },
       assetTranches(){
         $("assetTranches").customHtml(`
@@ -5478,11 +5565,14 @@ export let commerceApp_ = {
                 list.push(`
                     <tr>
                         <td>#${item.seq}</td>
-                        <td>${item.total_quantity}</td>
+                        <td>${item.unit_price}</td>
+                           <td>${item.total_quantity}</td>
+                        <td>${item.total_quantity - (item.total_traded)}</td>
+                     
                         <td>${item.company_traded}</td>
                         <td>${item.member_traded}</td>
-                        <td>${item.total_traded}</td>
-                        <td>${item.unit_price}</td>
+                     
+                        
                         
                     </tr>
                 `)
@@ -5503,12 +5593,14 @@ export let commerceApp_ = {
                                     <thead class="table-light">
                                         <tr>
                                             <th scope="col">Tranche</th>
+                                             <th scope="col">Unit Price</th>
                                             <th scope="col">Total Quantity</th>
+                                            <th scope="col">Balance</th>
                                             <th scope="col">Company Traded</th>
                                             <th scope="col">Members Traded</th>
-                                            <th scope="col">Total Traded</th>
                                             
-                                            <th scope="col">Unit Price</th>
+                                            
+                                           
                                             
                                         </tr>
                                     </thead>
