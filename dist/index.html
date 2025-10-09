@@ -33,12 +33,12 @@
   <link rel="stylesheet" href="/vendor/slick/slick-theme.css" />
   <script type="text/javascript" src="/vendor/slick/slick.js"></script>
   <script src="/js/jstree.min.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=1.0.1" />
+  <link rel="stylesheet" href="/css/app.css?v=1.0.3" />
 
   <style>
 
   </style>
-  <script type="module" crossorigin src="/assets/index-BKNCzKHU.js"></script>
+  <script type="module" crossorigin src="/assets/index-DdgMhHyp.js"></script>
 </head>
 
 <body>
@@ -51,21 +51,24 @@
   </div>
 
   <div class="dropup position-fixed bottom-0 end-0 m-3 ">
-    <div class="btn btn-outline-primary rounded-xl py-2" data-bs-toggle="dropdown" aria-expanded="false">
-      <i class="fa fa-plus"></i>
-    </div>
-    <ul class="dropdown-menu">
-      <li><a class="dropdown-item navi" href="/home">Home</a></li>
-      <li><a class="dropdown-item navi" href="/sales">Personal Sales</a></li>
-      <li><a class="dropdown-item navi" href="/group_sales">Group Sales</a></li>
-      <li><a class="dropdown-item navi" href="/placement">Placement</a></li>
-      <li><a class="dropdown-item navi" href="/placement_full">Placement(Full)</a></li>
-      <li><a class="dropdown-item navi" href="/referal">Referal</a></li>
-      <li id="divider">
-        <hr class="dropdown-divider">
-      </li>
-      <li><a class="dropdown-item" onclick="Root.startInstall()" href="javascript:void(0);">Add To HomePage</a></li>
-    </ul>
+    <form class="d-flex">
+        
+      <div aria-label="logout" class="d-none">
+        <div class="showCart ">
+          <cart class="d-none d-lg-block ">
+            Cart
+          </cart>
+        </div>
+      </div>
+      <div aria-label="logout" class="d-none">
+        <div class="showMcart d-none">
+          <mcart class="d-none d-lg-block ">
+            Cart
+          </mcart>
+        </div>
+      </div>
+    </form>
+
   </div>
   <div class="modal" id="mySubModal">
     <div class="modal-dialog modal-lg" role="document">

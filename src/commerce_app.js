@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // has to be done after rendering page, 
       // callback function to call this render
       var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
-          "light", "primaryBuy", "secondaryBuy", "assetTranches","userProfile", "wallet", "crypto_wallet", "announcement", "products", "product", "bonusLimit",
+          "light", "primaryBuy", "secondaryBuy", "assetTranches","userProfile", "wallet", "crypto_wallet", "crypto_wallet_balance", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
 
@@ -227,6 +227,44 @@ export let commerceApp_ = {
       })
   },
   components: {
+      crypto_wallet_balance() {
+          $("crypto_wallet_balance").each((i, el) => {
+              $(el).customHtml(`
+                <div class="card">
+                  <div class="card-body d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <h5 class="card-title m-0">Crypto Wallet</h5>
+                      <button class="btn btn-sm btn-outline-primary" id="refresh-cw">Refresh</button>
+                    </div>
+                    <div id="cw-address" class="text-truncate text-secondary">Loading...</div>
+                    <div class="d-flex align-items-end gap-2">
+                      <div class="display-6" id="cw-balance">-</div>
+                      <small class="text-muted" id="cw-symbol">tokens</small>
+                    </div>
+                  </div>
+                </div>
+              `)
+
+              function loadBalance() {
+                  var res = phxApp_.api("crypto_wallet_balance", { token: phxApp_.user && phxApp_.user.token })
+                  if (res && res.status == "error") {
+                      $("#cw-address").html(res.reason || "Error")
+                      $("#cw-balance").html("-")
+                      return
+                  }
+                  if (res) {
+                      $("#cw-address").html(res.address)
+                      $("#cw-balance").html(res.formatted)
+                      $("#cw-symbol").html("tokens")
+                  }
+              }
+
+              loadBalance()
+              $(document).off("click", "#refresh-cw").on("click", "#refresh-cw", function(){
+                  loadBalance()
+              })
+          })
+      },
       merchantproduct() {
           $("merchantproduct").customHtml(`
         <div class="text-center mt-4">
@@ -5305,9 +5343,9 @@ export let commerceApp_ = {
           let rows = trades.map(trade => `
             <tr>
               <td>${new Date(trade.trade_date).toLocaleString()}</td>
-              <td class="text-end">${trade.quantity}</td>
+              <td class="text-end">${Number(trade.quantity).toFixed(2)}</td>
               <td class="text-end">${trade.price_per_unit}</td>
-              <td class="text-end">${trade.total_amount}</td>
+              <td class="text-end">${Number(trade.total_amount).toFixed(2)}</td>
               <td class="text-end">${trade.buyer.username}</td>
               <td class="text-end">${trade.seller.username}</td>
             </tr>
@@ -5567,10 +5605,10 @@ export let commerceApp_ = {
                         <td>#${item.seq}</td>
                         <td>${item.unit_price}</td>
                            <td>${item.total_quantity}</td>
-                        <td>${item.total_quantity - (item.total_traded)}</td>
+                        <td>${Number(item.total_quantity - (item.total_traded)).toFixed(2)}</td>
                      
-                        <td>${item.company_traded}</td>
-                        <td>${item.member_traded}</td>
+                        <td>${Number(item.company_traded).toFixed(2)}</td>
+                        <td>${Number(item.member_traded).toFixed(2)}</td>
                      
                         
                         
