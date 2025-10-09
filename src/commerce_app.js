@@ -5228,10 +5228,6 @@ export let commerceApp_ = {
             return;
           }
 
-
-
-          
-
           
             let sellRows = depth.sell_orders.map(order => {
 
@@ -5245,8 +5241,8 @@ export let commerceApp_ = {
 
         return        `
             <tr>
-              <td class="text-end">${order.quantity}</td>
-              <td class="text-end text-danger">${order.price_per_unit}</td>
+              <td class="text-end">${Number(order.quantity).toFixed(2)}</td>
+              <td class="text-end text-danger">${Number(order.price_per_unit).toFixed(5)}</td>
               <td class="text-end">${order.user.username}</td>
               <td>
 
@@ -5260,8 +5256,8 @@ export let commerceApp_ = {
           
           let buyRows = depth.buy_orders.map(order => `
             <tr>
-              <td class="text-end">${order.quantity}</td>
-              <td class="text-end text-success">${order.price_per_unit}</td>
+              <td class="text-end">${Number(order.quantity).toFixed(2)}</td>
+              <td class="text-end text-success">${Number(order.price_per_unit).toFixed(5)}</td>
               <td class="text-end">${order.user.username}</td>
               <td></td>
             </tr>
