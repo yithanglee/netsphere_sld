@@ -141,7 +141,7 @@ class App {
 
   addRoutes() {
     const route_list = [
-      { html: "primary_buy.html", title: "Primary Buy ", route: "/primary_buy" },
+      { html: "crypto_wallet.html", title: "Crypto Wallet ", route: "/crypto_wallet" },
       { html: "secondary_buy.html", title: "Secondary Buy ", route: "/secondary_buy" },
       { html: "ledger_entries.html", title: "Ledger Entries ", route: "/ledger_entries" },
       { html: "shipping_management.html", title: "Shipping Management ", route: "/shipping_management" },

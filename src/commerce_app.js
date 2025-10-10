@@ -227,44 +227,7 @@ export let commerceApp_ = {
       })
   },
   components: {
-      crypto_wallet_balance() {
-          $("crypto_wallet_balance").each((i, el) => {
-              $(el).customHtml(`
-                <div class="card">
-                  <div class="card-body d-flex flex-column gap-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <h5 class="card-title m-0">Crypto Wallet</h5>
-                      <button class="btn btn-sm btn-outline-primary" id="refresh-cw">Refresh</button>
-                    </div>
-                    <div id="cw-address" class="text-truncate text-secondary">Loading...</div>
-                    <div class="d-flex align-items-end gap-2">
-                      <div class="display-6" id="cw-balance">-</div>
-                      <small class="text-muted" id="cw-symbol">tokens</small>
-                    </div>
-                  </div>
-                </div>
-              `)
-
-              function loadBalance() {
-                  var res = phxApp_.api("crypto_wallet_balance", { token: phxApp_.user && phxApp_.user.token })
-                  if (res && res.status == "error") {
-                      $("#cw-address").html(res.reason || "Error")
-                      $("#cw-balance").html("-")
-                      return
-                  }
-                  if (res) {
-                      $("#cw-address").html(res.address)
-                      $("#cw-balance").html(res.formatted)
-                      $("#cw-symbol").html("tokens")
-                  }
-              }
-
-              loadBalance()
-              $(document).off("click", "#refresh-cw").on("click", "#refresh-cw", function(){
-                  loadBalance()
-              })
-          })
-      },
+      
       merchantproduct() {
           $("merchantproduct").customHtml(`
         <div class="text-center mt-4">
@@ -1250,6 +1213,129 @@ export let commerceApp_ = {
 
 
       },
+      crypto_wallet_balance() {
+        let transfers = [];
+        $("crypto_wallet_balance").each((i, el) => {
+            $(el).customHtml(`
+              <div class="card">
+                <div class="card-body d-flex flex-column gap-2">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title m-0">Crypto Wallet</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="refresh-cw">Refresh</button>
+                  </div>
+                  <div id="cw-address" class="text-truncate text-secondary">Loading...</div>
+                  <div class="d-flex align-items-end gap-2">
+                    <div class="display-6" id="cw-balance">-</div>
+                    <small class="text-muted" id="cw-symbol">tokens</small>
+                  </div>
+                </div>
+              </div>
+              <div class="card mt-4">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="card-title m-0">Recent Transfers</h6>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th scope="col">Time</th>
+                          <th scope="col">From</th>
+                          <th scope="col">To</th>
+                          <th scope="col" class="text-end">Amount</th>
+                          <th scope="col">Tx</th>
+                        </tr>
+                      </thead>
+                      <tbody id="cw-transfers-body">
+                        <tr>
+                          <td colspan="5" class="text-center text-muted">No transfers</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            `)
+
+            function formatTokenAmount(valueStr, decimals) {
+                if (!valueStr) return "0";
+                var ds = typeof decimals === "number" ? decimals : parseInt(decimals || "18", 10);
+                var v = (valueStr + "").replace(/\D/g, "");
+                if (v.length === 0) return "0";
+                if (v.length <= ds) {
+                    var padded = ("0".repeat(ds + 1) + v).slice(-(ds + 1));
+                    var whole = padded.slice(0, padded.length - ds);
+                    var frac = padded.slice(-ds).replace(/0+$/, "");
+                    return frac ? whole + "." + frac.slice(0, 6) : whole;
+                }
+                var wholePart = v.slice(0, v.length - ds);
+                var fracPart = v.slice(v.length - ds).replace(/0+$/, "");
+                // thousands separators for whole part
+                wholePart = wholePart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                return fracPart ? wholePart + "." + fracPart.slice(0, 6) : wholePart;
+            }
+
+            function formatAddress(addr) {
+                if (!addr) return "-";
+                var a = addr + "";
+                if (a.length <= 10) return a;
+                return a.slice(0, 6) + "…" + a.slice(-4);
+            }
+
+            function formatTime(ts) {
+                if (!ts) return "-";
+                var n = parseInt(ts, 10);
+                if (!isFinite(n)) return "-";
+                var d = new Date(n * 1000);
+                return d.toLocaleString();
+            }
+
+            function renderTransfers() {
+                var $tbody = $("#cw-transfers-body");
+                if (!Array.isArray(transfers) || transfers.length === 0) {
+                    $tbody.html('<tr><td colspan="5" class="text-center text-muted">No transfers</td></tr>');
+                    return;
+                }
+                var rows = transfers.slice(0, 20).map(function(t){
+                    var amount = formatTokenAmount(t.value, parseInt(t.tokenDecimal || "18", 10));
+                    var symbol = t.tokenSymbol || "";
+                    var time = formatTime(t.timeStamp);
+                    var from = formatAddress(t.from);
+                    var to = formatAddress(t.to);
+                    var tx = t.hash ? ('<a href="https://polygonscan.com/tx/' + t.hash + '" target="_blank" rel="noopener">' + formatAddress(t.hash) + '</a>') : "-";
+                    return '<tr>' +
+                           '<td>' + time + '</td>' +
+                           '<td class="font-monospace">' + from + '</td>' +
+                           '<td class="font-monospace">' + to + '</td>' +
+                           '<td class="text-end">' + amount + (symbol ? (' ' + symbol) : '') + '</td>' +
+                           '<td class="font-monospace">' + tx + '</td>' +
+                           '</tr>';
+                }).join("");
+                $tbody.html(rows);
+            }
+
+            function loadBalance() {
+                var res = phxApp_.api("crypto_wallet_balance", { token: phxApp_.user && phxApp_.user.token })
+                if (res && res.status == "error") {
+                    $("#cw-address").html(res.reason || "Error")
+                    $("#cw-balance").html("-")
+                    return
+                }
+                if (res) {
+                    $("#cw-address").html(res.address)
+                    $("#cw-balance").html(res.formatted)
+                    $("#cw-symbol").html("tokens")
+                    transfers = res.transfers || []
+                    renderTransfers()
+                }
+            }
+
+            loadBalance()
+            $(document).off("click", "#refresh-cw").on("click", "#refresh-cw", function(){
+                loadBalance()
+            })
+        })
+    },
       crypto_wallet() {
           $("crypto_wallet").each((i, v) => {
               var crypto_wallet = phxApp.api("crypto_wallet", {
@@ -5072,7 +5158,7 @@ export let commerceApp_ = {
 
                       if (check.length > 0) {
 
-                          var wallet = check[0]
+                          var wallet = check[0],  suffix = "PTS"
 
 
                           var wallet_name = $(v).attr("aria-data").split("_").map((v, i) => {
@@ -5082,6 +5168,18 @@ export let commerceApp_ = {
                           var short_name = wallet_name.split(" ").map((i, v) => {
                               return i.split("")[0].toUpperCase()
                           }).join("") + "P"
+
+                          if (wallet_name == "Asset") {
+                            wallet_name = "Asset Token";
+                            short_name = "TK"
+                            suffix = "TK"
+                          } else if (wallet_name == "Active Token") {
+                            short_name = "ATK"
+                            suffix = "ATK"
+                          } else if (wallet_name == "Bonus") {
+                            
+                            suffix = "USDT"
+                          }
 
                           $(v).customHtml(`
             <a href="/wallets/` + wallet.id + `" class="navi" >
@@ -5097,7 +5195,7 @@ export let commerceApp_ = {
                     <span class="text-sm text-secondary text-truncate">` + wallet_name + `, <b>` + short_name + `</b></span>
                     <div class="d-flex align-items-center gap-2">
                       <div class="fs-4 format-int" style="">` + wallet.total + `</div>
-                      <small>pts</small>
+                      <small>${suffix}</small>
                     </div>
                   </div>
                 </div>
@@ -5474,7 +5572,7 @@ export let commerceApp_ = {
             <div class="col-12">
               <div class="card mb-3">
                 <div class="card-header">
-                  <h5 class="card-title mb-0">Secondary Market</h5>
+                  <h5 class="card-title mb-0">Profit Board</h5>
                   <small class="text-muted">Trade your staked assets with other users</small>
                 </div>
                 <div class="card-body">
@@ -5618,7 +5716,7 @@ export let commerceApp_ = {
                 <div class="col-12">
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h6 class="card-title mb-0">Asset Tranches</h6>
+                            <h6 class="card-title mb-0">Profit Board</h6>
                             <small class="text-muted">Current tranches</small>
                         </div>
                         <div class="card-body">
