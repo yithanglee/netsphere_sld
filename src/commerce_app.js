@@ -1252,25 +1252,135 @@ export let commerceApp_ = {
       },
       crypto_wallet() {
           $("crypto_wallet").each((i, v) => {
-              var crypto_wallet = phxApp.api("crypto_wallet", {
-                  token: phxApp.user.token
-              })
-              console.log(crypto_wallet)
-              $("crypto_wallet").html(`
-                <div class="d-flex flex-column flex-lg-row align-items-center flex gap-2">
-       
-                    <h5 class="">Crypto</h5>
-                    
-                      <span>` + crypto_wallet.address + `</span>
+              var wallet = phxApp.api("crypto_wallet", { token: phxApp.user.token })
+              var assetsCfg = phxApp.api("crypto_assets", { token: phxApp.user.token })
 
-                      <div
-                     class="btn btn-primary"
-                     onclick="phxApp.copyToClipboard('` + crypto_wallet.address + `')">
-                      Copy
-                     </div>
-               
+              function renderBalances(symbol) {
+                  // Native POL
+                  var pol = phxApp.api("crypto_native_balance", { token: phxApp.user.token })
+
+                  // ERC20 balances via transfers (NETSPH, USDT)
+                  var netsph = phxApp.api("crypto_wallet_balance", { token: phxApp.user.token, token_address: (assetsCfg.assets||[]).filter(a=>a.symbol=="NETSPH")[0]?.contract })
+                  var usdt = phxApp.api("crypto_wallet_balance", { token: phxApp.user.token, token_address: (assetsCfg.assets||[]).filter(a=>a.symbol=="USDT")[0]?.contract })
+
+                  var sel = symbol || "POL"
+                  var rows = []
+                  if (pol && !pol.status) rows.push(`<tr><td>POL</td><td class="text-end">${Number(pol.formatted||0).toFixed(6)}</td></tr>`)
+                  if (netsph && !netsph.status) rows.push(`<tr><td>NETSPH</td><td class="text-end">${Number(netsph.formatted||0).toFixed(6)}</td></tr>`)
+                  if (usdt && !usdt.status) rows.push(`<tr><td>USDT</td><td class="text-end">${Number(usdt.formatted||0).toFixed(6)}</td></tr>`)
+
+                  $("#cw-balances").html(rows.join(""))
+              }
+
+              $("crypto_wallet").html(`
+                <div class="card">
+                  <div class="card-body">
+                    <div class="d-flex flex-column gap-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">Crypto Wallet</h5>
+                        <div class="btn-group">
+                          <button class="btn btn-outline-primary btn-sm" id="cw-receive">Receive</button>
+                          <button class="btn btn-primary btn-sm" id="cw-send">Send</button>
+                        </div>
+                      </div>
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="text-truncate">${wallet.address}</div>
+                        <button class="btn btn-sm btn-outline-secondary" id="cw-copy">Copy</button>
+                      </div>
+                      <div class="d-flex align-items-center gap-2">
+                        <label class="form-label m-0">Asset</label>
+                        <select class="form-select form-select-sm" id="cw-asset" style="max-width:160px;">
+                          <option value="POL">POL</option>
+                          <option value="NETSPH">NETSPH</option>
+                          <option value="USDT">USDT</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary" id="cw-refresh">Refresh</button>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm">
+                          <thead>
+                            <tr><th>Asset</th><th class="text-end">Balance</th></tr>
+                          </thead>
+                          <tbody id="cw-balances"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               `)
+
+              renderBalances()
+
+              $(document).off("click", "#cw-copy").on("click", "#cw-copy", function(){
+                  phxApp.copyToClipboard(wallet.address)
+              })
+              $(document).off("click", "#cw-refresh").on("click", "#cw-refresh", function(){
+                  renderBalances($("#cw-asset").val())
+              })
+
+              // Receive modal
+              $(document).off("click", "#cw-receive").on("click", "#cw-receive", function(){
+                  phxApp.modal({
+                      selector: "#mySubModal",
+                      autoClose: false,
+                      header: "Receive",
+                      content: `
+                        <div class="d-flex flex-column gap-2">
+                          <div>Share this address to receive assets:</div>
+                          <div class="fw-bold">${wallet.address}</div>
+                          <div class="btn btn-outline-primary" id="cw-copy2">Copy</div>
+                        </div>
+                      `
+                  })
+                  $(document).off("click", "#cw-copy2").on("click", "#cw-copy2", function(){
+                      phxApp.copyToClipboard(wallet.address)
+                  })
+              })
+
+              // Send modal (ERC-20 simple transfer)
+              $(document).off("click", "#cw-send").on("click", "#cw-send", function(){
+                  phxApp.modal({
+                      selector: "#mySubModal",
+                      autoClose: false,
+                      header: "Send",
+                      content: `
+                        <div class="row g-2">
+                          <div class="col-12">
+                            <label class="form-label">Asset</label>
+                            <select class="form-select" id="send-asset">
+                              <option value="NETSPH">NETSPH</option>
+                              <option value="USDT">USDT</option>
+                            </select>
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">To Address</label>
+                            <input class="form-control" id="send-to" placeholder="0x..." />
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Amount</label>
+                            <input type="number" step="0.000001" class="form-control" id="send-amt" placeholder="0.0" />
+                          </div>
+                          <div class="col-12">
+                            <button class="btn btn-primary" id="btn-do-send">Send</button>
+                          </div>
+                          <div class="col-12" id="send-res"></div>
+                        </div>
+                      `
+                  })
+
+                  $(document).off("click", "#btn-do-send").on("click", "#btn-do-send", function(){
+                      var sym = $("#send-asset").val()
+                      var to = $("#send-to").val()
+                      var amt = $("#send-amt").val()
+                      var contract = (assetsCfg.assets||[]).filter(a=>a.symbol==sym)[0]?.contract
+                      if (!contract) {
+                        $("#send-res").html(`<div class='text-danger'>Missing contract address</div>`)
+                        return
+                      }
+                      // In a real secure flow, signing should be done server-side with custody or user via wallet. Placeholder:
+                      $("#send-res").html(`<div class='text-muted'>Sending... please confirm with admin implementation.</div>`)
+                  })
+              })
           })
       },
       topup() {
@@ -5139,7 +5249,7 @@ export let commerceApp_ = {
                 <td>#${l.seq}</td>
                 <td class="text-end">${l.qty}</td>
                 <td class="text-end">${l.unit_price}</td>
-              </tr>
+              </tr>sudo /netsphere/bin/commerce_front 
             `).join("");
             $("#quote-lines").html(`
               <div class="table-responsive">
