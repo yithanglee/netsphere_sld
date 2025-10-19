@@ -12,6 +12,7 @@ import {
 import {
   phoenixModel
 } from './phoenixModel.js';
+import { ethers } from 'ethers';
 export let commerceApp_ = {
   cart_: [],
   mcart_: [],
@@ -211,7 +212,7 @@ export let commerceApp_ = {
       // has to be done after rendering page, 
       // callback function to call this render
       var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
-          "light", "primaryBuy", "secondaryBuy", "assetTranches","userProfile", "wallet", "crypto_wallet", "crypto_wallet_balance", "announcement", "products", "product", "bonusLimit",
+          "light", "primaryBuy", "secondaryBuy", "assetTranches","userProfile", "wallet", "crypto_wallet", "metamask_wallet", "crypto_wallet_balance", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
 
@@ -227,44 +228,7 @@ export let commerceApp_ = {
       })
   },
   components: {
-      crypto_wallet_balance() {
-          $("crypto_wallet_balance").each((i, el) => {
-              $(el).customHtml(`
-                <div class="card">
-                  <div class="card-body d-flex flex-column gap-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <h5 class="card-title m-0">Crypto Wallet</h5>
-                      <button class="btn btn-sm btn-outline-primary" id="refresh-cw">Refresh</button>
-                    </div>
-                    <div id="cw-address" class="text-truncate text-secondary">Loading...</div>
-                    <div class="d-flex align-items-end gap-2">
-                      <div class="display-6" id="cw-balance">-</div>
-                      <small class="text-muted" id="cw-symbol">tokens</small>
-                    </div>
-                  </div>
-                </div>
-              `)
-
-              function loadBalance() {
-                  var res = phxApp_.api("crypto_wallet_balance", { token: phxApp_.user && phxApp_.user.token })
-                  if (res && res.status == "error") {
-                      $("#cw-address").html(res.reason || "Error")
-                      $("#cw-balance").html("-")
-                      return
-                  }
-                  if (res) {
-                      $("#cw-address").html(res.address)
-                      $("#cw-balance").html(res.formatted)
-                      $("#cw-symbol").html("tokens")
-                  }
-              }
-
-              loadBalance()
-              $(document).off("click", "#refresh-cw").on("click", "#refresh-cw", function(){
-                  loadBalance()
-              })
-          })
-      },
+      
       merchantproduct() {
           $("merchantproduct").customHtml(`
         <div class="text-center mt-4">
@@ -1250,6 +1214,215 @@ export let commerceApp_ = {
 
 
       },
+      metamask_wallet() {
+        $("metamask_wallet").each(async (i, v) => {
+          $(v).customHtml(`
+           
+              <div class="my-4 mx-2">
+                <div class="fs-5">MetaMask Wallet</div>
+                <div id="wallet-info" class="mt-3">
+                  <button id="connect-wallet-btn" class="btn btn-primary">Connect MetaMask</button>
+                  <div id="wallet-address" class="mt-3 d-none">
+                    <label class="form-label">Wallet Address:</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="address-display" readonly>
+                      <button class="btn btn-outline-secondary" id="copy-address" type="button">
+                        <i class="bi bi-clipboard"></i> Copy
+                      </button>
+                    </div>
+                  </div>
+                  <div id="wallet-error" class="alert alert-danger mt-3 d-none"></div>
+                </div>
+              </div>
+           
+          `)
+
+          // Connect wallet button handler
+          $("#connect-wallet-btn").click(async function() {
+            try {
+              // Check if MetaMask is installed
+              if (typeof window.ethereum === 'undefined') {
+                $("#wallet-error").text("MetaMask is not installed. Please install MetaMask extension.").removeClass("d-none");
+                return;
+              }
+
+              $(this).prop('disabled', true).text('Connecting...');
+              $("#wallet-error").addClass("d-none");
+
+              // Request account access
+              const provider = new ethers.BrowserProvider(window.ethereum);
+              const accounts = await provider.send("eth_requestAccounts", []);
+              
+              if (accounts.length > 0) {
+                const address = accounts[0];
+                
+                // Display the wallet address
+                $("#address-display").val(address);
+                $("#wallet-address").removeClass("d-none");
+                $(this).addClass("d-none");
+                
+                console.log("Connected wallet address:", address);
+              }
+            } catch (error) {
+              console.error("Error connecting to MetaMask:", error);
+              $("#wallet-error").text(`Error: ${error.message}`).removeClass("d-none");
+              $(this).prop('disabled', false).text('Connect MetaMask');
+            }
+          });
+
+          // Copy address button handler
+          $("#copy-address").click(function() {
+            const address = $("#address-display").val();
+            navigator.clipboard.writeText(address).then(() => {
+              const originalText = $(this).html();
+              $(this).html('<i class="bi bi-check"></i> Copied!');
+              setTimeout(() => {
+                $(this).html(originalText);
+              }, 2000);
+            });
+          });
+
+          // Listen for account changes
+          if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('accountsChanged', (accounts) => {
+              if (accounts.length > 0) {
+                $("#address-display").val(accounts[0]);
+                $("#wallet-address").removeClass("d-none");
+                $("#connect-wallet-btn").addClass("d-none");
+              } else {
+                $("#wallet-address").addClass("d-none");
+                $("#connect-wallet-btn").removeClass("d-none").prop('disabled', false).text('Connect MetaMask');
+              }
+            });
+          }
+        })
+      },
+      crypto_wallet_balance() {
+        let transfers = [];
+        $("crypto_wallet_balance").each((i, el) => {
+            $(el).customHtml(`
+              <div class="card">
+                <div class="card-body d-flex flex-column gap-2">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title m-0">Crypto Wallet</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="refresh-cw">Refresh</button>
+                  </div>
+                  <div id="cw-address" class="text-truncate text-secondary">Loading...</div>
+                  <div class="d-flex align-items-end gap-2">
+                    <div class="display-6 format-int" id="cw-balance">-</div>
+                    <small class="text-muted" id="cw-symbol">tokens</small>
+                  </div>
+                </div>
+              </div>
+              <div class="card mt-4">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="card-title m-0">Recent Transfers</h6>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th scope="col">Time</th>
+                          <th scope="col">From</th>
+                          <th scope="col">To</th>
+                          <th scope="col" class="text-end">Amount</th>
+                          <th scope="col">Tx</th>
+                        </tr>
+                      </thead>
+                      <tbody id="cw-transfers-body">
+                        <tr>
+                          <td colspan="5" class="text-center text-muted">No transfers</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            `)
+
+            
+
+            function formatTokenAmount(valueStr, decimals) {
+                if (!valueStr) return "0";
+                var ds = typeof decimals === "number" ? decimals : parseInt(decimals || "18", 10);
+                var v = (valueStr + "").replace(/\D/g, "");
+                if (v.length === 0) return "0";
+                if (v.length <= ds) {
+                    var padded = ("0".repeat(ds + 1) + v).slice(-(ds + 1));
+                    var whole = padded.slice(0, padded.length - ds);
+                    var frac = padded.slice(-ds).replace(/0+$/, "");
+                    return frac ? whole + "." + frac.slice(0, 6) : whole;
+                }
+                var wholePart = v.slice(0, v.length - ds);
+                var fracPart = v.slice(v.length - ds).replace(/0+$/, "");
+                // thousands separators for whole part
+                wholePart = wholePart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                return fracPart ? wholePart + "." + fracPart.slice(0, 6) : wholePart;
+            }
+
+            function formatAddress(addr) {
+                if (!addr) return "-";
+                var a = addr + "";
+                if (a.length <= 10) return a;
+                return a.slice(0, 6) + "…" + a.slice(-4);
+            }
+
+            function formatTime(ts) {
+                if (!ts) return "-";
+                var n = parseInt(ts, 10);
+                if (!isFinite(n)) return "-";
+                var d = new Date(n * 1000);
+                return d.toLocaleString();
+            }
+
+            function renderTransfers() {
+                var $tbody = $("#cw-transfers-body");
+                if (!Array.isArray(transfers) || transfers.length === 0) {
+                    $tbody.html('<tr><td colspan="5" class="text-center text-muted">No transfers</td></tr>');
+                    return;
+                }
+                var rows = transfers.slice(0, 20).map(function(t){
+                    var amount = formatTokenAmount(t.value, parseInt(t.tokenDecimal || "18", 10));
+                    var symbol = t.tokenSymbol || "";
+                    var time = formatTime(t.timeStamp);
+                    var from = formatAddress(t.from);
+                    var to = formatAddress(t.to);
+                    var tx = t.hash ? ('<a href="https://polygonscan.com/tx/' + t.hash + '" target="_blank" rel="noopener">' + formatAddress(t.hash) + '</a>') : "-";
+                    return '<tr>' +
+                           '<td>' + time + '</td>' +
+                           '<td class="font-monospace">' + from + '</td>' +
+                           '<td class="font-monospace">' + to + '</td>' +
+                           '<td class="text-end">' + amount + (symbol ? (' ' + symbol) : '') + '</td>' +
+                           '<td class="font-monospace">' + tx + '</td>' +
+                           '</tr>';
+                }).join("");
+                $tbody.html(rows);
+            }
+
+            function loadBalance() {
+                var res = phxApp_.api("crypto_wallet_balance", { token: phxApp_.user && phxApp_.user.token })
+                if (res && res.status == "error") {
+                    $("#cw-address").html(res.reason || "Error")
+                    $("#cw-balance").html("-")
+                    return
+                }
+                if (res) {
+                    $("#cw-address").html(res.address)
+                    $("#cw-balance").html(res.formatted)
+                    $("#cw-symbol").html("tokens")
+                    ColumnFormater.formatDate();
+                    transfers = res.transfers || []
+                    renderTransfers()
+                }
+            }
+
+            loadBalance()
+            $(document).off("click", "#refresh-cw").on("click", "#refresh-cw", function(){
+                loadBalance()
+            })
+        })
+    },
       crypto_wallet() {
           $("crypto_wallet").each((i, v) => {
               var wallet = phxApp.api("crypto_wallet", { token: phxApp.user.token })
@@ -1382,6 +1555,116 @@ export let commerceApp_ = {
                   })
               })
           })
+      },
+      async claimFromOwner(owner, amount){
+
+        // commerceApp.components.claimFromOwner("0xB33499F76983110D5d74b8b0C551F204815c4BD2", 100.00)
+        try {
+          if (!window.ethereum) {
+            phxApp_.modal({
+              selector: "#mySubModal",
+              autoClose: false,
+              header: "Install MetaMask",
+              content: `
+                <div class="p-2">
+                  <p>To claim tokens, please install a Web3 wallet (MetaMask).</p>
+                  <a class="btn btn-primary" target="_blank" rel="noopener" href="https://metamask.io/download/">Install MetaMask</a>
+                </div>
+              `
+            })
+            return { status: 'error', reason: 'no_provider' }
+          }
+
+          // request account access if needed
+          try {
+            if (window.ethereum.request) {
+              await window.ethereum.request({ method: 'eth_requestAccounts' })
+            }
+          } catch (e) {
+            phxApp_.notify("Wallet connection rejected.", { type: "danger" })
+            return { status: 'error', reason: 'wallet_rejected' }
+          }
+
+          const tokenAddress = "0xa17c6fc7d9ecef353ceb3132ddd619037d134125";
+          const abi = [
+            "function transferFrom(address from, address to, uint256 amount) returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)",
+            "function balanceOf(address account) view returns (uint256)",
+            "function decimals() view returns (uint8)"
+          ];
+
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          // ensure correct network (Polygon mainnet 0x89)
+          try {
+            const net = await provider.getNetwork()
+            if (net && net.chainId && Number(net.chainId) !== 137) {
+              try {
+                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x89' }] })
+              } catch (switchErr) {
+                // attempt to add chain if missing
+                if (switchErr && switchErr.code === 4902) {
+                  try {
+                    await window.ethereum.request({
+                      method: 'wallet_addEthereumChain',
+                      params: [{
+                        chainId: '0x89',
+                        chainName: 'Polygon Mainnet',
+                        nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+                        rpcUrls: ['https://polygon-rpc.com/'],
+                        blockExplorerUrls: ['https://polygonscan.com']
+                      }]
+                    })
+                  } catch (_) {}
+                }
+              }
+            }
+          } catch (_) {}
+
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(tokenAddress, abi, signer);
+
+          let decimals = 18;
+          try { decimals = await contract.decimals() } catch (_) {}
+          const amountInWei = ethers.parseUnits(amount.toString(), Number(decimals));
+
+          // pre-check owner balance and allowance
+          const spender = await signer.getAddress()
+          const [ownerBal, allowance] = await Promise.all([
+            contract.balanceOf(owner),
+            contract.allowance(owner, spender)
+          ])
+
+          if (ownerBal < amountInWei) {
+            phxApp_.notify("Owner balance is insufficient for this amount.", { type: "danger" })
+            return { status: 'error', reason: 'insufficient_owner_balance' }
+          }
+
+          if (allowance < amountInWei) {
+            phxApp_.modal({
+              selector: "#mySubModal",
+              autoClose: false,
+              header: "Approval required",
+              content: `
+                <div class="p-2">
+                  <p>The token owner must approve your address to spend ${amount} tokens before claiming.</p>
+                  <ol class="mb-2">
+                    <li>Ask owner to run approve(your address, amount) in their wallet;</li>
+                    <li>Or contact admin to approve on-chain for this token.</li>
+                  </ol>
+                </div>
+              `
+            })
+            return { status: 'error', reason: 'insufficient_allowance' }
+          }
+
+          const tx = await contract.transferFrom(owner, await signer.getAddress(), amountInWei);
+          await tx.wait();
+          return { status: 'ok', txHash: tx.hash };
+        } catch (err) {
+          console.error(err)
+          phxApp_.notify("Claim failed. " + (err && err.message ? err.message : ''), { type: "danger" })
+          return { status: 'error', reason: 'tx_failed' }
+        }
       },
       topup() {
           function payData(params) {
@@ -5182,7 +5465,7 @@ export let commerceApp_ = {
 
                       if (check.length > 0) {
 
-                          var wallet = check[0]
+                          var wallet = check[0],  suffix = "PTS"
 
 
                           var wallet_name = $(v).attr("aria-data").split("_").map((v, i) => {
@@ -5192,6 +5475,18 @@ export let commerceApp_ = {
                           var short_name = wallet_name.split(" ").map((i, v) => {
                               return i.split("")[0].toUpperCase()
                           }).join("") + "P"
+
+                          if (wallet_name == "Asset") {
+                            wallet_name = "Asset Token";
+                            short_name = "TK"
+                            suffix = "TK"
+                          } else if (wallet_name == "Active Token") {
+                            short_name = "ATK"
+                            suffix = "ATK"
+                          } else if (wallet_name == "Bonus") {
+                            
+                            suffix = "USDT"
+                          }
 
                           $(v).customHtml(`
             <a href="/wallets/` + wallet.id + `" class="navi" >
@@ -5207,7 +5502,7 @@ export let commerceApp_ = {
                     <span class="text-sm text-secondary text-truncate">` + wallet_name + `, <b>` + short_name + `</b></span>
                     <div class="d-flex align-items-center gap-2">
                       <div class="fs-4 format-int" style="">` + wallet.total + `</div>
-                      <small>pts</small>
+                      <small>${suffix}</small>
                     </div>
                   </div>
                 </div>
@@ -5338,10 +5633,6 @@ export let commerceApp_ = {
             return;
           }
 
-
-
-          
-
           
             let sellRows = depth.sell_orders.map(order => {
 
@@ -5355,8 +5646,8 @@ export let commerceApp_ = {
 
         return        `
             <tr>
-              <td class="text-end">${order.quantity}</td>
-              <td class="text-end text-danger">${order.price_per_unit}</td>
+              <td class="text-end">${Number(order.quantity).toFixed(2)}</td>
+              <td class="text-end text-danger">${Number(order.price_per_unit).toFixed(5)}</td>
               <td class="text-end">${order.user.username}</td>
               <td>
 
@@ -5370,8 +5661,8 @@ export let commerceApp_ = {
           
           let buyRows = depth.buy_orders.map(order => `
             <tr>
-              <td class="text-end">${order.quantity}</td>
-              <td class="text-end text-success">${order.price_per_unit}</td>
+              <td class="text-end">${Number(order.quantity).toFixed(2)}</td>
+              <td class="text-end text-success">${Number(order.price_per_unit).toFixed(5)}</td>
               <td class="text-end">${order.user.username}</td>
               <td></td>
             </tr>
@@ -5588,7 +5879,7 @@ export let commerceApp_ = {
             <div class="col-12">
               <div class="card mb-3">
                 <div class="card-header">
-                  <h5 class="card-title mb-0">Secondary Market</h5>
+                  <h5 class="card-title mb-0">Profit Board</h5>
                   <small class="text-muted">Trade your staked assets with other users</small>
                 </div>
                 <div class="card-body">
@@ -5732,7 +6023,7 @@ export let commerceApp_ = {
                 <div class="col-12">
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h6 class="card-title mb-0">Asset Tranches</h6>
+                            <h6 class="card-title mb-0">Profit Board</h6>
                             <small class="text-muted">Current tranches</small>
                         </div>
                         <div class="card-body">
