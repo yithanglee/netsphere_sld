@@ -1428,67 +1428,117 @@ export let commerceApp_ = {
               var wallet = phxApp.api("crypto_wallet", { token: phxApp.user.token })
               var assetsCfg = phxApp.api("crypto_assets", { token: phxApp.user.token })
 
-              function renderBalances(symbol) {
-                  // Native POL
-                  var pol = phxApp.api("crypto_native_balance", { token: phxApp.user.token })
+              function shortAddr(addr){
+                  if(!addr) return ""
+                  var a = String(addr)
+                  if (a.length <= 10) return a
+                  return a.substring(0,6)+"..."+a.substring(a.length-4)
+              }
 
-                  // ERC20 balances via transfers (NETSPH, USDT)
-                  var netsph = phxApp.api("crypto_wallet_balance", { token: phxApp.user.token, token_address: (assetsCfg.assets||[]).filter(a=>a.symbol=="NETSPH")[0]?.contract })
-                  var usdt = phxApp.api("crypto_wallet_balance", { token: phxApp.user.token, token_address: (assetsCfg.assets||[]).filter(a=>a.symbol=="USDT")[0]?.contract })
+              // Fetch native POL for display on network row
+              var polInfo = phxApp.api("crypto_native_balance", { token: phxApp.user.token })
+              var polDisplay = (polInfo && !polInfo.status) ? Number(polInfo.formatted||0).toFixed(6) : "0"
 
-                  var sel = symbol || "POL"
-                  var rows = []
-                  if (pol && !pol.status) rows.push(`<tr><td>POL</td><td class="text-end">${Number(pol.formatted||0).toFixed(6)}</td></tr>`)
-                  if (netsph && !netsph.status) rows.push(`<tr><td>NETSPH</td><td class="text-end">${Number(netsph.formatted||0).toFixed(6)}</td></tr>`)
-                  if (usdt && !usdt.status) rows.push(`<tr><td>USDT</td><td class="text-end">${Number(usdt.formatted||0).toFixed(6)}</td></tr>`)
+              function iconFor(sym){
+                  var m = {
+                      POL: "https://e8b864cf8d55fbd854f43ae53b6c824c.ipfscdn.io/ipfs/Qmd58rKLnBfteouAcmdjQ1HzDvRLSLjMbHjuXRytsKwAkD",
+                      USDT: "https://polygonscan.com/token/images/tether_32.png",
+                      USDC: "https://polygonscan.com/token/images/centre-usdc_32.png",
+                      KTDFI: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png",
+                      NETSPH: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png"
+                  }
+                  return m[sym] || m.POL
+              }
 
-                  $("#cw-balances").html(rows.join(""))
+              function getTokenContract(sym){
+                  var arr = (assetsCfg.assets || [])
+                  var it = arr.filter(function(a){ return a && a.symbol == sym })[0]
+                  return it && it.contract
+              }
+
+              function updateNetworkRow(sym){
+                  if (sym === 'POL') {
+                      $("#cw-network").html(
+                        '<img src="'+iconFor('POL')+'" style="height:24px;width:24px;"/>'+
+                        '<span class="ms-2">POL</span>'+
+                        '<span class="ms-2 text-white">'+polDisplay+' POL</span>'+
+                        '<svg width="16" height="16" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="margin-left:auto;"><path d="M6.1584 3.13508C6.35985 2.94621 6.67627 2.95642 6.86514 3.15788L10.6151 7.15788C10.7954 7.3502 10.7954 7.64949 10.6151 7.84182L6.86514 11.8418C6.67627 12.0433 6.35985 12.0535 6.1584 11.8646C5.95694 11.6757 5.94673 11.3593 6.1356 11.1579L9.565 7.49985L6.1356 3.84182C5.94673 3.64036 5.95694 3.32394 6.1584 3.13508Z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>'
+                      )
+                      return
+                  }
+                  var c = getTokenContract(sym)
+                  var display = '0.000000'
+                  if (c) {
+                      var r = phxApp.api('crypto_wallet_balance', { token: phxApp.user.token, token_address: c })
+                      if (r && !r.status) display = Number(r.formatted || 0).toFixed(6)
+                  }
+                  $("#cw-network").html(
+                    '<img src="'+iconFor(sym)+'" style="height:24px;width:24px;"/>'+
+                    '<span class="ms-2">'+sym+'</span>'+
+                    '<span class="ms-2 text-white">'+display+' '+sym+'</span>'+
+                    '<svg width="16" height="16" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="margin-left:auto;"><path d="M6.1584 3.13508C6.35985 2.94621 6.67627 2.95642 6.86514 3.15788L10.6151 7.15788C10.7954 7.3502 10.7954 7.64949 10.6151 7.84182L6.86514 11.8418C6.67627 12.0433 6.35985 12.0535 6.1584 11.8646C5.95694 11.6757 5.94673 11.3593 6.1356 11.1579L9.565 7.49985L6.1356 3.84182C5.94673 3.64036 5.95694 3.32394 6.1584 3.13508Z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>'
+                  )
               }
 
               $("crypto_wallet").html(`
-                <div class="card">
+                <div class="card" style="max-width:400px;margin:0 auto;">
                   <div class="card-body">
-                    <div class="d-flex flex-column gap-2">
-                      <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="m-0">Crypto Wallet</h5>
-                        <div class="btn-group">
-                          <button class="btn btn-outline-primary btn-sm" id="cw-receive">Receive</button>
-                          <button class="btn btn-primary btn-sm" id="cw-send">Send</button>
+                    <div class="d-flex flex-column">
+                      <div style="height:8px;"></div>
+                      <div class="d-flex align-items-center gap-3" style="padding: 12px 0;">
+                        <div style="height:48px; width:48px; position:relative;">
+                          <div style="border-radius:100%; height:48px; width:48px; overflow:hidden;">
+                            <div style="background-image: radial-gradient(at left bottom, rgb(103,232,249), rgb(14,116,144)); height:64px; width:64px;"></div>
+                          </div>
+                          <div style="position:absolute; right:-2px; bottom:-2px;">
+                            <div style="display:flex; place-items:center; border:1px solid rgb(254,254,32); border-radius:100%; padding:4px; background: rgb(30,29,89);">
+                              <svg fill="none" height="12" viewBox="0 0 16 16" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M13.3335 2.6665H2.66683C1.93045 2.6665 1.3335 3.26346 1.3335 3.99984V11.9998C1.3335 12.7362 1.93045 13.3332 2.66683 13.3332H13.3335C14.0699 13.3332 14.6668 12.7362 14.6668 11.9998V3.99984C14.6668 3.26346 14.0699 2.6665 13.3335 2.6665Z" stroke="hsl(0, 100%, 60%)" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14.6668 4.6665L8.68683 8.4665C8.48101 8.59545 8.24304 8.66384 8.00016 8.66384C7.75728 8.66384 7.51931 8.59545 7.3135 8.4665L1.3335 4.6665" stroke="hsl(0, 100%, 60%)" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                          <div class="d-flex align-items-center gap-2">
+                            <span class="fw-semibold">${shortAddr(wallet.address)}</span>
+                            <button class="btn btn-sm btn-outline-secondary" id="cw-copy" title="Copy">
+                              <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M1 9.50006C1 10.3285 1.67157 11.0001 2.5 11.0001H4L4 10.0001H2.5C2.22386 10.0001 2 9.7762 2 9.50006L2 2.50006C2 2.22392 2.22386 2.00006 2.5 2.00006L9.5 2.00006C9.77614 2.00006 10 2.22392 10 2.50006V4.00002H5.5C4.67158 4.00002 4 4.67159 4 5.50002V12.5C4 13.3284 4.67158 14 5.5 14H12.5C13.3284 14 14 13.3284 14 12.5V5.50002C14 4.67159 13.3284 4.00002 12.5 4.00002H11V2.50006C11 1.67163 10.3284 1.00006 9.5 1.00006H2.5C1.67157 1.00006 1 1.67163 1 2.50006V9.50006ZM5 5.50002C5 5.22388 5.22386 5.00002 5.5 5.00002H12.5C12.7761 5.00002 13 5.22388 13 5.50002V12.5C13 12.7762 12.7761 13 12.5 13H5.5C5.22386 13 5 12.7762 5 12.5V5.50002Z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                            </button>
+                          </div>
+                          <span class="text-muted small">${phxApp.user && phxApp.user.email ? phxApp.user.email : ""}</span>
                         </div>
                       </div>
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="text-truncate">${wallet.address}</div>
-                        <button class="btn btn-sm btn-outline-secondary" id="cw-copy">Copy</button>
+
+                      <div class="d-flex gap-2" style="padding: 0 8px 8px 8px;">
+                        <button class="btn btn-outline-primary flex-fill" id="cw-send">Send</button>
+                        <button class="btn btn-outline-primary flex-fill" id="cw-receive">Receive</button>
                       </div>
-                      <div class="d-flex align-items-center gap-2">
-                        <label class="form-label m-0">Asset</label>
-                        <select class="form-select form-select-sm" id="cw-asset" style="max-width:160px;">
-                          <option value="POL">POL</option>
-                          <option value="NETSPH">NETSPH</option>
-                          <option value="USDT">USDT</option>
-                        </select>
-                        <button class="btn btn-sm btn-outline-primary" id="cw-refresh">Refresh</button>
+
+                      <div class="mb-2" style="padding: 0 8px;">
+                        <button class="btn btn-light w-100 d-flex align-items-center" id="cw-network"></button>
                       </div>
-                      <div class="table-responsive">
-                        <table class="table table-sm">
-                          <thead>
-                            <tr><th>Asset</th><th class="text-end">Balance</th></tr>
-                          </thead>
-                          <tbody id="cw-balances"></tbody>
-                        </table>
+
+                      <div style="padding: 0 8px;">
+                        <div class="list-group">
+                          <button class="list-group-item list-group-item-action d-flex align-items-center" id="cw-transactions">
+                            <span>Transactions</span>
+                          </button>
+                          <button class="list-group-item list-group-item-action d-flex align-items-center" id="cw-assets">
+                            <span>View Assets</span>
+                          </button>
+                          
+                        </div>
+                      </div>
+
+                      <div style="height: 12px;"></div>
+                      <div style="padding: 0 8px;">
+                        <button class="btn btn-outline-danger w-100" id="cw-disconnect">Disconnect Wallet</button>
                       </div>
                     </div>
                   </div>
                 </div>
               `)
 
-              renderBalances()
-
               $(document).off("click", "#cw-copy").on("click", "#cw-copy", function(){
                   phxApp.copyToClipboard(wallet.address)
-              })
-              $(document).off("click", "#cw-refresh").on("click", "#cw-refresh", function(){
-                  renderBalances($("#cw-asset").val())
               })
 
               // Receive modal
@@ -1510,8 +1560,9 @@ export let commerceApp_ = {
                   })
               })
 
-              // Send modal (ERC-20 simple transfer)
+              // Send modal (native + ERC-20 simple transfer)
               $(document).off("click", "#cw-send").on("click", "#cw-send", function(){
+                  var currentSym = (function(){ try { return localStorage.getItem('current_sym') } catch(_) { return null } })() || 'NETSPH'
                   phxApp.modal({
                       selector: "#mySubModal",
                       autoClose: false,
@@ -1521,8 +1572,9 @@ export let commerceApp_ = {
                           <div class="col-12">
                             <label class="form-label">Asset</label>
                             <select class="form-select" id="send-asset">
-                              <option value="NETSPH">NETSPH</option>
-                              <option value="USDT">USDT</option>
+                              <option value="NETSPH" ${currentSym==='NETSPH'?'selected':''}>NETSPH</option>
+                              <option value="USDT" ${currentSym==='USDT'?'selected':''}>USDT</option>
+                              <option value="POL" ${currentSym==='POL'?'selected':''}>POL</option>
                             </select>
                           </div>
                           <div class="col-12">
@@ -1542,18 +1594,202 @@ export let commerceApp_ = {
                   })
 
                   $(document).off("click", "#btn-do-send").on("click", "#btn-do-send", function(){
-                      var sym = $("#send-asset").val()
+                      var sym = $("#send-asset").val(); try { localStorage.setItem('current_sym', sym) } catch(_){}
                       var to = $("#send-to").val()
                       var amt = $("#send-amt").val()
-                      var contract = (assetsCfg.assets||[]).filter(a=>a.symbol==sym)[0]?.contract
-                      if (!contract) {
-                        $("#send-res").html(`<div class='text-danger'>Missing contract address</div>`)
+                      if (sym === 'POL') {
+                        $("#send-res").html(`<div class='text-muted'>Sending native POL...</div>`)
+                        phxApp_.post('crypto_send_native', { token: phxApp.user && phxApp.user.token, to: to, amount: amt }, null, function(r){
+                          if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`); else $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`)
+                        })
                         return
                       }
-                      // In a real secure flow, signing should be done server-side with custody or user via wallet. Placeholder:
-                      $("#send-res").html(`<div class='text-muted'>Sending... please confirm with admin implementation.</div>`)
+                      var contract = (assetsCfg.assets||[]).filter(a=>a.symbol==sym)[0]?.contract
+                      if (!contract) { $("#send-res").html(`<div class='text-danger'>Missing contract address</div>`); return }
+                      $("#send-res").html(`<div class='text-muted'>Sending ${sym}...</div>`)
+                      phxApp_.post('crypto_send_erc20', { token: phxApp.user && phxApp.user.token, contract: contract, to: to, amount: amt }, null, function(r){
+                        if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`); else $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`)
+                      })
                   })
               })
+
+              // Optional actions
+              $(document).off("click", "#cw-transactions").on("click", "#cw-transactions", function(){
+                  function short(a){ if(!a) return "-"; a = String(a); return a.length>10? a.slice(0,6)+"..."+a.slice(-4): a }
+                  function fmtAmt(valueStr, decimals){
+                      if (!valueStr) return "0";
+                      var ds = typeof decimals === "number" ? decimals : parseInt(decimals || "18", 10);
+                      var v = (valueStr + "").replace(/\D/g, "");
+                      if (v.length === 0) return "0";
+                      if (v.length <= ds) {
+                          var padded = ("0".repeat(ds + 1) + v).slice(-(ds + 1));
+                          var whole = padded.slice(0, padded.length - ds);
+                          var frac = padded.slice(-ds).replace(/0+$/, "");
+                          return frac ? whole + "." + frac.slice(0, 6) : whole;
+                      }
+                      var wholePart = v.slice(0, v.length - ds);
+                      var fracPart = v.slice(v.length - ds).replace(/0+$/, "");
+                      wholePart = wholePart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                      return fracPart ? wholePart + "." + fracPart.slice(0, 6) : wholePart;
+                  }
+                  function fmtTime(ts){ if(!ts) return "-"; var n=parseInt(ts,10); if(!isFinite(n)) return "-"; return new Date(n*1000).toLocaleString() }
+
+                  phxApp.modal({
+                      selector: "#mySubModal",
+                      autoClose: false,
+                      header: "Transactions",
+                      content: `
+                        <div class="d-flex flex-column" style="max-width:400px;">
+                          <div class="mb-2 d-flex align-items-center justify-content-center position-relative">
+                            <h6 class="m-0">Transactions</h6>
+                          </div>
+                          <div class="border-top"></div>
+                          <div style="padding: 8px 0; min-height: 250px; max-height: 370px; overflow:auto;" id="tx-list">
+                            <div class="d-flex flex-column align-items-center justify-content-center text-muted" style="gap: 8px; min-height: 200px;">
+                              <svg width="48" height="48" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.877075 7.49988C0.877075 3.84219 3.84222 0.877045 7.49991 0.877045C11.1576 0.877045 14.1227 3.84219 14.1227 7.49988C14.1227 11.1575 11.1576 14.1227 7.49991 14.1227C3.84222 14.1227 0.877075 11.1575 0.877075 7.49988ZM7.49991 1.82704C4.36689 1.82704 1.82708 4.36686 1.82708 7.49988C1.82708 10.6329 4.36689 13.1727 7.49991 13.1727C10.6329 13.1727 13.1727 10.6329 13.1727 7.49988C13.1727 4.36686 10.6329 1.82704 7.49991 1.82704ZM9.85358 5.14644C10.0488 5.3417 10.0488 5.65829 9.85358 5.85355L8.20713 7.49999L9.85358 9.14644C10.0488 9.3417 10.0488 9.65829 9.85358 9.85355C9.65832 10.0488 9.34173 10.0488 9.14647 9.85355L7.50002 8.2071L5.85358 9.85355C5.65832 10.0488 5.34173 10.0488 5.14647 9.85355C4.95121 9.65829 4.95121 9.3417 5.14647 9.14644L6.79292 7.49999L5.14647 5.85355C4.95121 5.65829 4.95121 5.3417 5.14647 5.14644C5.34173 4.95118 5.65832 4.95118 5.85358 5.14644L7.50002 6.79289L9.14647 5.14644C9.34173 4.95118 9.65832 4.95118 9.85358 5.14644Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                              <span>No Transactions</span>
+                            </div>
+                          </div>
+                          <div class="border-top"></div>
+                          <div class="pt-2">
+                            <a href="https://polygonscan.com/address/${wallet.address}" target="_blank" rel="noopener" class="text-decoration-none">View on Explorer
+                              <svg width="16" height="16" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 2C2.44772 2 2 2.44772 2 3V12C2 12.5523 2.44772 13 3 13H12C12.5523 13 13 12.5523 13 12V8.5C13 8.22386 12.7761 8 12.5 8C12.2239 8 12 8.22386 12 8.5V12H3V3L6.5 3C6.77614 3 7 2.77614 7 2.5C7 2.22386 6.77614 2 6.5 2H3ZM12.8536 2.14645C12.9015 2.19439 12.9377 2.24964 12.9621 2.30861C12.9861 2.36669 12.9996 2.4303 13 2.497L13 2.5V2.50049V5.5C13 5.77614 12.7761 6 12.5 6C12.2239 6 12 5.77614 12 5.5V3.70711L6.85355 8.85355C6.65829 9.04882 6.34171 9.04882 6.14645 8.85355C5.95118 8.65829 5.95118 8.34171 6.14645 8.14645L11.2929 3H9.5C9.22386 3 9 2.77614 9 2.5C9 2.22386 9.22386 2 9.5 2H12.4999H12.5C12.5678 2 12.6324 2.01349 12.6914 2.03794C12.7504 2.06234 12.8056 2.09851 12.8536 2.14645Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                            </a>
+                          </div>
+                        </div>
+                      `
+                  })
+
+                  
+
+                  // Load transfers from configured ERC-20 assets (NETSPH, USDT)
+                  var symbols = ["NETSPH", "USDT"]
+                  var items = []
+                  symbols.forEach(function(sym){
+                      var contract = (assetsCfg.assets||[]).filter(function(a){ return a.symbol==sym })[0]?.contract
+                      if (!contract) return
+                      var r = phxApp.api("crypto_wallet_balance", { token: phxApp.user.token, token_address: contract })
+                      if (r && !r.status && Array.isArray(r.transfers)) {
+                          items = items.concat(r.transfers)
+                      }
+                  })
+                  // Sort desc by timestamp
+                  items.sort(function(a,b){ return parseInt(b.timeStamp||"0",10) - parseInt(a.timeStamp||"0",10) })
+
+                  var $list = $("#tx-list")
+                  if (!items.length) return
+
+                  var html = items.slice(0,50).map(function(t){
+                      var sym = t.tokenSymbol || ""
+                      var dec = parseInt(t.tokenDecimal || "18", 10)
+                      var amt = fmtAmt(t.value, dec)
+                      var from = short(t.from)
+                      var to = short(t.to)
+                      var ts = fmtTime(t.timeStamp)
+                      var link = t.hash ? ('https://polygonscan.com/tx/' + t.hash) : '#'
+                      return `
+                        <div class="d-flex flex-column border rounded p-2 mb-2" style="gap:4px;">
+                          <div class="d-flex align-items-center">
+                            <span class="text-muted small">${ts}</span>
+                            <span class="ms-auto fw-semibold">${amt} ${sym}</span>
+                          </div>
+                          <div class="d-flex align-items-center small">
+                            <span class="font-monospace">${from}</span>
+                            <span class="mx-1">→</span>
+                            <span class="font-monospace">${to}</span>
+                          </div>
+                          <div>
+                            <a href="${link}" target="_blank" rel="noopener" class="small">View Tx</a>
+                          </div>
+                        </div>
+                      `
+                  }).join("")
+                  $list.html(html)
+              })
+
+
+            function showAssetModal(){
+                function iconFor(sym){
+                    var m = {
+                        POL: "https://e8b864cf8d55fbd854f43ae53b6c824c.ipfscdn.io/ipfs/Qmd58rKLnBfteouAcmdjQ1HzDvRLSLjMbHjuXRytsKwAkD",
+                        USDT: "https://polygonscan.com/token/images/tether_32.png",
+                        USDC: "https://polygonscan.com/token/images/centre-usdc_32.png",
+                        KTDFI: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png"
+                    }
+                    return m[sym] || m.POL
+                }
+                function row(sym, amount){
+                    return `
+                      <div class="d-flex align-items-center" style="gap:12px; padding:12px;">
+                        <div style="display:inline-flex; place-items:center; position:relative; flex-shrink:0;">
+                          <img src="${iconFor(sym)}" style="height:32px;width:32px;object-fit:contain;"/>
+                        </div>
+                        <div class="d-flex flex-column" style="gap:6px;">
+                          <span class="fw-semibold">${sym}</span>
+                          <span class="text-muted">${amount} ${sym}</span>
+                        </div>
+                      </div>
+                    `
+                }
+
+                phxApp.modal({
+                    selector: "#mySubModal",
+                    autoClose: false,
+                    header: "View Assets (Tokens)",
+                    content: `
+                      <div class="d-flex flex-column" style="max-width:400px;">
+                      
+                        <div style="height:12px;"></div>
+                        <div id="assets-scroll" style="max-height:300px; overflow:auto;">
+                          <div id="assets-list" class="d-flex flex-column"></div>
+                        </div>
+                        <div style="height:24px;"></div>
+                      </div>
+                    `
+                })
+
+                
+
+                var listHtml = []
+                // Native POL
+                var pol = phxApp.api("crypto_native_balance", { token: phxApp.user.token })
+                var polAmt = (pol && !pol.status) ? Number(pol.formatted||0).toFixed(6) : "0"
+                listHtml.push(row("POL", polAmt))
+
+                // ERC-20 balances from configured assets
+                var assets = (assetsCfg.assets || [])
+                assets.forEach(function(a){
+                    if (!a || !a.symbol || !a.contract) return
+                    var r = phxApp.api("crypto_wallet_balance", { token: phxApp.user.token, token_address: a.contract })
+                    if (r && !r.status) {
+                        var amt = Number(r.formatted || 0).toFixed(6)
+                        listHtml.push(row(a.symbol, amt))
+                    }
+                })
+
+                if (!listHtml.length) {
+                    listHtml.push('<div class="text-center text-white py-4">No assets</div>')
+                }
+                $("#assets-list").html(listHtml.join(""))
+
+                $(document).off('click', '#assets-list .d-flex.align-items-center').on('click', '#assets-list .d-flex.align-items-center', function(){
+                    var sym = $(this).find('span.fw-semibold').text() || ''
+                    sym = sym.trim().split(/\s+/)[0]
+                    if (sym) {
+                        try { localStorage.setItem('current_sym', sym) } catch(_){}
+                        updateNetworkRow(sym)
+                    }
+                    $("#mySubModal").modal('hide')
+                })
+            }
+              $(document).off("click", "#cw-assets").on("click", "#cw-assets", () => showAssetModal())
+              $(document).off("click", "#cw-network").on("click", "#cw-network", () => showAssetModal())
+              $(document).off("click", "#cw-disconnect").on("click", "#cw-disconnect", function(){
+                  phxApp.notify("Disconnect not implemented in this environment.", { type: "warning" })
+              })
+
+              // Default selected token: NETSPH
+              updateNetworkRow('NETSPH')
           })
       },
       async claimFromOwner(owner, amount){
