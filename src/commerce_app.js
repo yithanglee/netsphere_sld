@@ -1662,8 +1662,9 @@ export let commerceApp_ = {
 
                   
 
-                  // Load transfers from configured ERC-20 assets (NETSPH, USDT)
-                  var symbols = ["NETSPH", "USDT"]
+                  // Load transfers for selected ERC-20 asset based on current_sym (NETSPH/USDT)
+                  var currentSym = (function(){ try { return localStorage.getItem('current_sym') } catch(_) { return null } })() || 'NETSPH'
+                  var symbols = (currentSym === 'POL') ? [] : [currentSym]
                   var items = []
                   symbols.forEach(function(sym){
                       var contract = (assetsCfg.assets||[]).filter(function(a){ return a.symbol==sym })[0]?.contract
@@ -1673,6 +1674,14 @@ export let commerceApp_ = {
                           items = items.concat(r.transfers)
                       }
                   })
+                  if (currentSym === 'POL') {
+                      var nat = phxApp.api("crypto_native_transfers", { token: phxApp.user && phxApp.user.token })
+                      if (nat && !nat.status && Array.isArray(nat.transfers)) {
+                          items = items.concat(nat.transfers.map(function(t){
+                              return { hash: t.hash, from: t.from, to: t.to, value: t.value, timeStamp: t.timeStamp, tokenSymbol: 'POL', tokenDecimal: '18' }
+                          }))
+                      }
+                  }
                   // Sort desc by timestamp
                   items.sort(function(a,b){ return parseInt(b.timeStamp||"0",10) - parseInt(a.timeStamp||"0",10) })
 
@@ -1830,26 +1839,28 @@ export let commerceApp_ = {
           ];
 
           const provider = new ethers.BrowserProvider(window.ethereum);
-          // ensure correct network (Polygon mainnet 0x89)
+          // ensure correct network (configured chain)
           try {
+            const cfg = (typeof phxApp !== 'undefined' && phxApp.api) ? phxApp.api("chain_config", {}) : (typeof phxApp_ !== 'undefined' && phxApp_.api ? phxApp_.api("chain_config", {}) : null)
+            const CHAIN_ID = (cfg && cfg.chain_id) ? Number(cfg.chain_id) : 137
+            const CHAIN_ID_HEX = (cfg && cfg.chain_id_hex) ? cfg.chain_id_hex : '0x89'
+            const isAmoy = CHAIN_ID === 80002
+            const chainMeta = {
+              chainId: CHAIN_ID_HEX,
+              chainName: isAmoy ? 'Polygon Amoy' : 'Polygon Mainnet',
+              nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
+              rpcUrls: [ isAmoy ? 'https://rpc-amoy.polygon.technology' : 'https://polygon-rpc.com/' ],
+              blockExplorerUrls: [ isAmoy ? 'https://amoy.polygonscan.com' : 'https://polygonscan.com' ]
+            }
             const net = await provider.getNetwork()
-            if (net && net.chainId && Number(net.chainId) !== 137) {
+            if (net && net.chainId && Number(net.chainId) !== CHAIN_ID) {
               try {
-                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x89' }] })
+                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: CHAIN_ID_HEX }] })
               } catch (switchErr) {
                 // attempt to add chain if missing
                 if (switchErr && switchErr.code === 4902) {
                   try {
-                    await window.ethereum.request({
-                      method: 'wallet_addEthereumChain',
-                      params: [{
-                        chainId: '0x89',
-                        chainName: 'Polygon Mainnet',
-                        nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
-                        rpcUrls: ['https://polygon-rpc.com/'],
-                        blockExplorerUrls: ['https://polygonscan.com']
-                      }]
-                    })
+                    await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [chainMeta] })
                   } catch (_) {}
                 }
               }
