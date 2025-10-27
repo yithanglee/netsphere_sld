@@ -1009,21 +1009,50 @@ export let commerceApp_ = {
           `)
               } else {
 
+                let rc = $(recruit).attr("recruit")
+                console.log("rc", rc)
+                if (rc == undefined) {
+                  rc = "U1"
+                } 
+
+                if (phxApp.user.stockist_users.length > 0 && ["u2", "u3"].includes(rc)) {
                   $(recruit).customHtml(`
 
-          <div class="">
-              <label class="my-2">Position</label>
-              <select class="form-control" name="position">
-                <option>auto</option>
-                <option>left</option>
-                <option>right</option>
-              </select>
-              <div class="mt-4 btn btn-primary generate-link">Generate</div>
-          </div>
+                    <div class="">
+                        <label class="my-2">${rc} Position</label>
+                        <select class="form-control" name="position">
+                          <option>auto</option>
+                          <option>left</option>
+                          <option>right</option>
+                        </select>
+                        <div class="mt-4 btn btn-primary generate-link">Generate</div>
+                    </div>
+                  `)
+
+                } else {
+
+                  if (rc == "U1") {
+
+                    $(recruit).customHtml(`
+
+                      <div class="">
+                          <label class="my-2">${rc} Position</label>
+                          <select class="form-control" name="position">
+                            <option>auto</option>
+                            <option>left</option>
+                            <option>right</option>
+                          </select>
+                          <div class="mt-4 btn btn-primary generate-link">Generate</div>
+                      </div>
+                    `)
+
+                  }
+
+
+                }
 
 
 
-          `)
               }
 
               $(".generate-mlink").click(() => {
@@ -1069,9 +1098,14 @@ export let commerceApp_ = {
                   })
 
               })
-              $(".generate-link").click(() => {
+              $(".generate-link").click((i) => {
+
+               let  rc =   $(i.target).closest("recruit").attr("recruit")
+
+               console.log("rc", rc)
 
                   phxApp_.api("get_share_link", {
+                      recruit: rc,
                       username: phxApp_.user.username,
                       position: $("select[name='position']").val()
                   }, null, (code) => {
