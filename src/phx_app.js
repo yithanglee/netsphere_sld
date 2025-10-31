@@ -672,7 +672,7 @@ export let phxApp_ = {
       setTimeout(() => {
 
         if (failed_callback != null) {
-          failed_callback()
+          failed_callback(e.responseJSON)
         }
         phxApp_.hide()
       }, 500)

@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // this find all all the related components on the page and transform them.
       // has to be done after rendering page, 
       // callback function to call this render
-      var list = ["merchantProducts", "merchantproduct", "merchantProfile", "merchant", "recruit", "topup", "country",
+      var list = ["merchantProducts", "merchantproduct", "merchantProfile", "sponsorInfo", "merchant", "recruit", "topup", "country",
           "light", "primaryBuy", "secondaryBuy", "assetTranches","userProfile", "wallet", "crypto_wallet", "metamask_wallet", "crypto_wallet_balance", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
@@ -1457,6 +1457,58 @@ export let commerceApp_ = {
             })
         })
     },
+    setSecondPassword(secondPassword) {
+      var onSuccess = (typeof secondPassword === 'function') ? secondPassword : null
+      var header = "Set Second Password"
+      var content = `
+        <div class="row g-2">
+          <div class="col-12">
+            <label class="form-label">Current Second Password <span class="text-muted small">(leave blank if never set)</span></label>
+            <input type="password" class="form-control" id="old-second-password" placeholder="Current second password" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">New Second Password</label>
+            <input type="password" class="form-control" id="new-second-password" placeholder="Enter new second password" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" id="confirm-second-password" placeholder="Confirm second password" />
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button class="btn btn-primary" id="btn-do-set-second">Save</button>
+            <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          </div>
+          <div class="col-12" id="set-second-res"></div>
+        </div>
+      `
+      phxApp.modal({ selector: "#myModal", autoClose: false, header: header, content: content })
+
+      $(document).off("click", "#btn-do-set-second").on("click", "#btn-do-set-second", function(){
+        var oldp = $("#old-second-password").val() || ""
+        var np = $("#new-second-password").val() || ""
+        var cp = $("#confirm-second-password").val() || ""
+        if (np.trim() === "" || cp.trim() === "") {
+          $("#set-second-res").html(`<div class='text-danger'>Please fill new and confirm fields</div>`)
+          return
+        }
+        if (np !== cp) {
+          $("#set-second-res").html(`<div class='text-danger'>Passwords do not match</div>`)
+          return
+        }
+        $("#set-second-res").html(`<div class='text-muted'>Saving...</div>`)
+        var payload = { token: phxApp.user && phxApp.user.token, second_password: np }
+        if (oldp.trim() !== "") payload.old_password = oldp
+        phxApp_.post('set_second_password', payload, null, function(rr){
+          if (rr && rr.status === 'ok') {
+            $("#set-second-res").html(`<div class='text-success'>Saved</div>`) 
+            try { phxApp_.toast && phxApp_.toast({ content: "Second password saved" }) } catch(_){ }
+            setTimeout(function(){ $("#myModal").modal("hide"); if (onSuccess) onSuccess() }, 200)
+          } else {
+            $("#set-second-res").html(`<div class='text-danger'>Failed to save</div>`) 
+          }
+        })
+      })
+    },
       crypto_wallet() {
           $("crypto_wallet").each((i, v) => {
               var wallet = phxApp.api("crypto_wallet", { token: phxApp.user.token })
@@ -1558,6 +1610,9 @@ export let commerceApp_ = {
                           <button class="list-group-item list-group-item-action d-flex align-items-center" id="cw-assets">
                             <span>View Assets</span>
                           </button>
+                      <button class="list-group-item list-group-item-action d-flex align-items-center" id="cw-second-password">
+                        <span>Set / Change Second Password</span>
+                      </button>
                           
                         </div>
                       </div>
@@ -1594,6 +1649,43 @@ export let commerceApp_ = {
                   })
               })
 
+
+
+              function performSendAction(){
+                var sym = $("#send-asset").val(); try { localStorage.setItem('current_sym', sym) } catch(_){}
+                var to = $("#send-to").val()
+                var amt = $("#send-amt").val()
+                if (sym === 'POL') {
+                  $("#send-res").html(`<div class='text-muted'>Sending native POL...</div>`)
+                  phxApp_.toast({
+                    content: "Sending native POL..."
+                  })
+                  phxApp_.post('crypto_send_native', { token: phxApp.user && phxApp.user.token, to: to, amount: amt }, null, function(r){
+                    if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`); else $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`)
+                  })
+                  return
+                }
+                var contract = (assetsCfg.assets||[]).filter(a=>a.symbol==sym)[0]?.contract
+                if (!contract) { $("#send-res").html(`<div class='text-danger'>Missing contract address</div>`); return }
+                $("#send-res").html(`<div class='text-muted'>Sending ${sym}...</div>`)
+                phxApp_.post('crypto_send_erc20', { token: phxApp.user && phxApp.user.token, contract: contract, to: to, amount: amt }, null, function(r){
+                  if (r && r.status === 'ok') {
+                    $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`);
+                    phxApp_.notify("Sent. Tx: " + r.tx_hash, {
+                      type: "success",
+                      header: "Sent"
+                    })
+                  } else {
+                    $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`);
+                    phxApp_.toast({
+                      content: "Failed: " + (r && r.reason || 'unknown')
+                    })
+                  }
+                })
+
+              }
+
+
               // Send modal (native + ERC-20 simple transfer)
               $(document).off("click", "#cw-send").on("click", "#cw-send", function(){
                   var currentSym = (function(){ try { return localStorage.getItem('current_sym') } catch(_) { return null } })() || 'NETSPH'
@@ -1627,25 +1719,59 @@ export let commerceApp_ = {
                       `
                   })
 
-                  $(document).off("click", "#btn-do-send").on("click", "#btn-do-send", function(){
-                      var sym = $("#send-asset").val(); try { localStorage.setItem('current_sym', sym) } catch(_){}
-                      var to = $("#send-to").val()
-                      var amt = $("#send-amt").val()
-                      if (sym === 'POL') {
-                        $("#send-res").html(`<div class='text-muted'>Sending native POL...</div>`)
-                        phxApp_.post('crypto_send_native', { token: phxApp.user && phxApp.user.token, to: to, amount: amt }, null, function(r){
-                          if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`); else $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`)
-                        })
-                        return
-                      }
-                      var contract = (assetsCfg.assets||[]).filter(a=>a.symbol==sym)[0]?.contract
-                      if (!contract) { $("#send-res").html(`<div class='text-danger'>Missing contract address</div>`); return }
-                      $("#send-res").html(`<div class='text-muted'>Sending ${sym}...</div>`)
-                      phxApp_.post('crypto_send_erc20', { token: phxApp.user && phxApp.user.token, contract: contract, to: to, amount: amt }, null, function(r){
-                        if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`); else $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`)
-                      })
-                  })
+
+
+
               })
+
+              $(document).off("click", "#btn-do-send").on("click", "#btn-do-send", function(){
+                $("#mySubModal").modal("hide")
+                phxApp.modal({
+                  selector: "#myModal",
+                  autoClose: false,
+                  header: "Confirm Send",
+                  content: `
+                    <div class="row g-2">
+                      <div class="col-12">
+                        <label class="form-label">Second Password</label>
+                        <input type="password" class="form-control" id="second-password" placeholder="Enter your second password" />
+                      </div>
+                      <div class="col-12">
+                        <button class="btn btn-primary" id="btn-do-confirm-send">Send</button>
+                      </div>
+                      <div class="col-12" id="send-res"></div>
+                    </div>
+                  `
+                })
+              })
+
+
+              $(document).off("click", "#btn-do-confirm-send").on("click", "#btn-do-confirm-send", function(){
+                var secondPassword = $("#second-password").val()
+
+                phxApp.api("check_second_password", { token: phxApp.user && phxApp.user.token, second_password: secondPassword }, function(r){
+
+                  if (r && r.reason === 'not_set') {
+                    $("#myModal").modal("hide")
+                    if (typeof commerceApp !== 'undefined' && commerceApp && typeof commerceApp.setSecondPassword === 'function') {
+                      commerceApp.setSecondPassword(function(){ performSendAction() })
+                    }
+                  } else {
+                    $("#send-res").html(`<div class='text-danger'>Invalid second password</div>`)
+                  }
+
+                }, function(r){
+                  if (r && r.status === 'ok') {
+                    $("#myModal").modal("hide")
+                    performSendAction()
+                  } else {
+                   
+                   
+                  }
+                })
+                  
+              })
+
 
               // Optional actions
               $(document).off("click", "#cw-transactions").on("click", "#cw-transactions", function(){
@@ -1826,6 +1952,15 @@ export let commerceApp_ = {
                 })
             }
               $(document).off("click", "#cw-assets").on("click", "#cw-assets", () => showAssetModal())
+              $(document).off("click", "#cw-second-password").on("click", "#cw-second-password", function(){
+                  if (phxApp && typeof phxApp.setSecondPassword === 'function') {
+                    phxApp.setSecondPassword()
+                  } else if (typeof commerceApp !== 'undefined' && commerceApp && typeof commerceApp.components.setSecondPassword === 'function') {
+                    commerceApp.components.setSecondPassword()
+                  } else {
+                    phxApp.modal({ selector: "#myModal", autoClose: false, header: "Set Second Password", content: `<div class='text-muted'>Please try again.</div>` })
+                  }
+              })
               $(document).off("click", "#cw-network").on("click", "#cw-network", () => showAssetModal())
               $(document).off("click", "#cw-disconnect").on("click", "#cw-disconnect", function(){
                   phxApp.notify("Disconnect not implemented in this environment.", { type: "warning" })
@@ -5104,6 +5239,18 @@ export let commerceApp_ = {
           })
 
 
+      },
+      sponsorInfo() {
+        phxApp_.api("get_sponsor_info", { token: phxApp.user && phxApp.user.token , code: pageParams.share_code}, null, function(r){
+          if (r && r.status === 'ok') {
+            $("sponsorInfo").customHtml(`
+              <div class="d-flex justify-content-between align-items-center">
+                <span>Sponsor: ` + r.res.user.username + `</span>
+                <span>Position: ` + r.res.placement.user.username + ` `+ r.res.position+`</span>
+              </div>
+            `)
+          }
+        })
       },
       products() {
           function evalCountry(countryName) {
