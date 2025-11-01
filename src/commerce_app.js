@@ -5733,6 +5733,10 @@ export let commerceApp_ = {
       },
       rewardList() {
 
+        function replaceLabel(label) {
+          return label.replace("matching bonus", "weekly matching bonus").replace("elite leader", "3% Pool Bonus");
+        }
+
           $("rewardList").each((rii, v) => {
 
               $(v).customHtml(`
@@ -5776,7 +5780,7 @@ export let commerceApp_ = {
                                   <div class="my-2 d-flex align-items-center justify-content-between">
 
                                     <span class="fs-5">
-                                      ` + ColumnFormater.capitalize(v.name) + `
+                                      ` + ColumnFormater.capitalize(replaceLabel(v.name)) + `
                                     </span>
                                     <span class="d-flex justify-content-between gap-2 align-items-center">
                                       <span class="format-float">
