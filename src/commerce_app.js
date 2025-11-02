@@ -211,7 +211,7 @@ export let commerceApp_ = {
       // this find all all the related components on the page and transform them.
       // has to be done after rendering page, 
       // callback function to call this render
-      var list = ["merchantProducts", "merchantproduct", "merchantProfile", "sponsorInfo", "merchant", "recruit", "topup", "country",
+      var list = ["swap_back","merchantProducts", "merchantproduct", "merchantProfile", "sponsorInfo", "merchant", "recruit", "topup", "country",
           "light", "primaryBuy", "secondaryBuy", "assetTranches","userProfile", "wallet", "crypto_wallet", "metamask_wallet", "crypto_wallet_balance", "announcement", "products", "product", "bonusLimit",
           "rewardList", "rewardSummary","mcart", "cart", "cartItems", "salesItems", "upgradeTarget", "upgradeTargetMerchant", "sponsorTarget", "stockistTarget", "choosePayment"
       ]
@@ -351,6 +351,241 @@ export let commerceApp_ = {
           })
 
 
+      },
+      swap_back() {
+          $("swap_back").each((i, v) => {
+              var wallet = phxApp.api("crypto_wallet", { token: phxApp.user && phxApp.user.token }) || {}
+              var assetsCfg = phxApp.api("crypto_assets", { token: phxApp.user && phxApp.user.token }) || {}
+
+              function shortAddr(addr){
+                  if(!addr) return ""
+                  var a = String(addr)
+                  if (a.length <= 10) return a
+                  return a.substring(0,6)+"..."+a.substring(a.length-4)
+              }
+
+              function iconFor(sym){
+                  var m = {
+                      POL: "https://e8b864cf8d55fbd854f43ae53b6c824c.ipfscdn.io/ipfs/Qmd58rKLnBfteouAcmdjQ1HzDvRLSLjMbHjuXRytsKwAkD",
+                      USDT: "https://polygonscan.com/token/images/tether_32.png",
+                      USDC: "https://polygonscan.com/token/images/centre-usdc_32.png",
+                      KTDFI: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png",
+                      NETSPH: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png"
+                  }
+                  return m[sym] || m.POL
+              }
+
+              function getTokenContract(sym){
+                  var arr = (assetsCfg.assets || [])
+                  var it = arr.filter(function(a){ return a && a.symbol == sym })[0]
+                  return it && it.contract
+              }
+
+              async function getTreasuryInfo(){
+                  var api_res = await phxApp.api("swap_back_config", { token: phxApp.user && phxApp.user.token }) || {}
+                  var cfg = api_res.res || {}
+                  var arr = (assetsCfg.assets || [])
+                  var nst = arr.filter(function(a){ return a && a.symbol == 'NETSPH' })[0] || {}
+                  var treasury = cfg.treasury_address || assetsCfg.treasury || nst.treasury || ""
+                  var rate = (typeof cfg.rate === 'number') ? cfg.rate : (typeof nst.rate === 'number' ? nst.rate : 1.0)
+                  var min_amount = (typeof cfg.min_amount === 'number') ? cfg.min_amount : 0
+                  var confirmations = (typeof cfg.confirmations === 'number') ? cfg.confirmations : 5
+                  return { treasury: treasury, rate: rate, min_amount: min_amount, confirmations: confirmations }
+              }
+
+              var sym = 'NETSPH'
+              var contract = getTokenContract(sym)
+              var tinfo = {
+                treasury: "0xc36340f58ff6561e428df698189ce0361c90586f",
+                rate: 1.0,
+                min_amount: 0,
+                confirmations: 5
+              }
+              
+              var chainCfg = phxApp.api("chain_config", {}) || {}
+              var explorer = (chainCfg && String(chainCfg.chain_id) === '80002') ? 'https://amoy.polygonscan.com' : 'https://polygonscan.com'
+
+              // Prepare treasury dropdown options (configured + provided address)
+              var altTreasury = "0xc36340f58ff6561e428df698189ce0361c90586f"
+              var treasuries = []
+              if (tinfo.treasury) treasuries.push(String(tinfo.treasury))
+              treasuries.push(altTreasury)
+              treasuries = treasuries
+                .filter(Boolean)
+                .map(function(a){ return String(a).trim() })
+                .filter(function(v, i, arr){ return arr.findIndex(function(x){ return x.toLowerCase() === v.toLowerCase() }) === i })
+              var selectedTreasury = treasuries[0] || ""
+
+              var balanceDisplay = '0.000000'
+              if (contract) {
+                  var rb = phxApp.api('crypto_wallet_balance', { token: phxApp.user && phxApp.user.token, token_address: contract })
+                  if (rb && !rb.status) balanceDisplay = Number(rb.formatted || 0).toFixed(6)
+              }
+
+              $("swap_back").html(`
+                <div class="card" style="max-width:520px;margin:0 auto;">
+                  <div class="card-body">
+                    <div class="d-flex flex-column" style="gap:8px;">
+                      <div class="d-flex align-items-center gap-3" style="padding: 4px 0 6px 0;">
+                        <img src="${iconFor(sym)}" style="height:28px;width:28px;"/>
+                        <div class="d-flex flex-column">
+                          <div class="fw-semibold">Swap Back ${sym} → Points</div>
+                          <div class="text-muted small">Admin approval required</div>
+                        </div>
+                        <div class="ms-auto small text-muted">Bal: ${balanceDisplay} ${sym}</div>
+                      </div>
+                      <div class="alert alert-secondary small" role="alert">
+                        <ol class="m-0 ps-3">
+                          <li>Send ${sym} to treasury address.</li>
+                          <li>(Optional) Paste transaction hash and verify.</li>
+                          <li>Submit request for admin approval. Our system will match your transfer in the background.</li>
+                        </ol>
+                      </div>
+
+                      <div class="mb-1">
+                        <label class="form-label">Treasury Address</label>
+                        <div class="input-group">
+                          <select class="form-select" id="sb-treasury">
+                            ${treasuries.map(function(a){ return `<option value="${a}" ${a===selectedTreasury?'selected':''}>${a}</option>` }).join("")}
+                          </select>
+                          <button class="btn btn-outline-secondary" id="sb-copy-treasury">Copy</button>
+                          <a class="btn btn-outline-secondary${selectedTreasury?'':' disabled'}" id="sb-view-treasury" target="_blank" rel="noopener" href="${selectedTreasury? (explorer + '/address/' + selectedTreasury):'#'}">View</a>
+                        </div>
+                      </div>
+
+                      <div class="row g-2">
+                        <div class="col-12">
+                          <label class="form-label">Transaction Hash <span class="text-muted small">(optional)</span></label>
+                          <input class="form-control" id="sb-txhash" placeholder="0x..." />
+                        </div>
+                        <div class="col-12">
+                          <label class="form-label">Amount (${sym})</label>
+                          <input type="number" step="0.000001" class="form-control" id="sb-amount" placeholder="0.0" />
+                          <div class="form-text">Minimum: ${tinfo.min_amount || 0}</div>
+                        </div>
+                        <div class="col-12">
+                          <div class="d-flex align-items-center">
+                            <div class="text-muted">Rate</div>
+                            <div class="ms-auto"><span id="sb-rate">${Number(tinfo.rate||1).toFixed(6)}</span> pts per ${sym}</div>
+                          </div>
+                          <div class="d-flex align-items-center">
+                            <div class="text-muted">You will receive</div>
+                            <div class="ms-auto fw-semibold"><span id="sb-points">0.000000</span> pts</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary flex-fill" id="sb-verify">Verify Tx</button>
+                        <button class="btn btn-primary flex-fill" id="sb-submit">Submit Request</button>
+                      </div>
+
+                      <div>
+                        <button class="btn btn-light w-100" id="sb-history">View History</button>
+                      </div>
+
+                      <div id="sb-res" class="small"></div>
+                    </div>
+                  </div>
+                </div>
+              `)
+
+              function updatePoints(){
+                  var amt = parseFloat($("#sb-amount").val() || "0")
+                  var rate = parseFloat($("#sb-rate").text() || "1")
+                  if (!isFinite(amt) || !isFinite(rate)) { $("#sb-points").text("0.000000"); return }
+                  var pts = (amt * rate)
+                  $("#sb-points").text(Number(pts||0).toFixed(6))
+              }
+
+              $(document).off('input', '#sb-amount').on('input', '#sb-amount', updatePoints)
+              $(document).off('click', '#sb-copy-treasury').on('click', '#sb-copy-treasury', function(){
+                  var t = $("#sb-treasury").val() || ""; if (t) phxApp.copyToClipboard(t)
+              })
+              $(document).off('change', '#sb-treasury').on('change', '#sb-treasury', function(){
+                  var t = $(this).val() || ""
+                  if (t) {
+                    $("#sb-view-treasury").removeClass('disabled').attr('href', `${explorer}/address/${t}`)
+                  } else {
+                    $("#sb-view-treasury").addClass('disabled').attr('href', '#')
+                  }
+              })
+
+              $(document).off('click', '#sb-verify').on('click', '#sb-verify', function(){
+                  var txh = $("#sb-txhash").val() || ""
+                  if (txh && !/^0x[0-9a-fA-F]{64}$/.test(txh)) { $("#sb-res").html(`<div class='text-danger'>Invalid transaction hash format</div>`); return }
+                  $("#sb-res").html(`<div class='text-muted'>Verifying...</div>`)
+                  var tz = $("#sb-treasury").val() || tinfo.treasury
+                  phxApp_.post('swap_back_verify_tx', { token: phxApp.user && phxApp.user.token, tx_hash: txh, contract: contract, treasury: tz }, null, function(r){
+                      if (r && r.status === 'ok') {
+                          if (r.amount) { $("#sb-amount").val(r.amount) }
+                          if (r.rate) { $("#sb-rate").text(Number(r.rate).toFixed(6)) }
+                          updatePoints()
+                          $("#sb-res").html(`<div class='text-success'>Verified. From ${shortAddr(r.from)} → ${shortAddr(r.to)} · ${Number(r.amount||0).toFixed(6)} ${sym}</div>`)
+                      } else {
+                          $("#sb-res").html(`<div class='text-danger'>Verification failed: ${r && (r.reason||r.message) || 'unknown'}</div>`)
+                      }
+                  })
+              })
+
+              $(document).off('click', '#sb-submit').on('click', '#sb-submit', function(){
+                  var txh = $("#sb-txhash").val() || ""
+                  var amt = parseFloat($("#sb-amount").val() || "0")
+                  if (!contract) { $("#sb-res").html(`<div class='text-danger'>Missing token contract</div>`); return }
+                  if (!tinfo.treasury) { $("#sb-res").html(`<div class='text-danger'>Missing treasury address</div>`); return }
+                  // if (!txh || !/^0x[0-9a-fA-F]{64}$/.test(txh)) { $("#sb-res").html(`<div class='text-danger'>Enter a valid transaction hash</div>`); return }
+                  if (!isFinite(amt) || amt <= 0) { $("#sb-res").html(`<div class='text-danger'>Enter a valid amount</div>`); return }
+                  if (tinfo.min_amount && amt < tinfo.min_amount) { $("#sb-res").html(`<div class='text-danger'>Amount must be ≥ ${tinfo.min_amount}</div>`); return }
+                  $("#sb-res").html(`<div class='text-muted'>Submitting...</div>`)
+                  var tz = $("#sb-treasury").val() || tinfo.treasury
+                  var tx_payload = txh ? txh : null
+                  var payload = { token: phxApp.user && phxApp.user.token, tx_hash: tx_payload, amount: amt, symbol: sym, contract: contract, treasury: tz, wallet_address: wallet.address }
+                  phxApp_.post('swap_back_create', payload, null, function(r){
+                      if (r && r.status === 'ok') {
+                          $("#sb-res").html(`<div class='text-success'>Request submitted. Status: pending review</div>`)
+                          try { phxApp_.toast({ content: 'Swap-back request submitted' }) } catch(_){ }
+                      } else {
+                          $("#sb-res").html(`<div class='text-danger'>Submit failed: ${r && (r.reason||r.message) || 'unknown'}</div>`)
+                      }
+                  })
+              })
+
+              $(document).off('click', '#sb-history').on('click', '#sb-history', function(){
+                  var list = phxApp.api('swap_back_history', { token: phxApp.user && phxApp.user.token }) || []
+                  if (!Array.isArray(list)) list = []
+                  phxApp.modal({
+                      selector: '#mySubModal',
+                      autoClose: false,
+                      header: 'Swap Back History',
+                      content: `
+                        <div style="max-width:520px;">
+                          <div id="sb-hlist"></div>
+                        </div>
+                      `
+                  })
+                  var html = list.map(function(x){
+                      var st = (x.status||'').toString()
+                      var pts = (typeof x.points_credited === 'number') ? Number(x.points_credited).toFixed(6) : '-'
+                      var amt = (typeof x.amount === 'number') ? Number(x.amount).toFixed(6) : '-'
+                      var l = x.tx_hash ? (explorer + '/tx/' + x.tx_hash) : '#'
+                      return `
+                        <div class="d-flex flex-column border rounded p-2 mb-2" style="gap:4px;">
+                          <div class="d-flex align-items-center small">
+                            <span class="text-muted">${shortAddr(x.tx_hash)}</span>
+                            <a class="ms-2" href="${l}" target="_blank" rel="noopener">View</a>
+                            <span class="ms-auto badge bg-${st==='credited'?'success':(st==='approved'?'primary':(st==='rejected'?'danger':'secondary'))}">${st}</span>
+                          </div>
+                          <div class="d-flex align-items-center small">
+                            <span>${amt} ${sym}</span>
+                            <span class="ms-auto">${pts} pts</span>
+                          </div>
+                        </div>
+                      `
+                  }).join("")
+                  $("#sb-hlist").html(html || `<div class='text-muted text-center py-4'>No records</div>`)
+              })
+
+          })
       },
       merchantProducts() {
 
