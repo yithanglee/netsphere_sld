@@ -1229,15 +1229,15 @@ export let commerceApp_ = {
               if (v == "") {
                   $(recruit).customHtml(`
 
-          <div class="">
-              <label class="my-2">Position</label>
-              <select class="form-control" name="mposition">
-                <option>auto</option>
-              <option>left</option>
-                <option>right</option>
-              </select>
-              <div class="mt-4 btn btn-primary generate-mlink">Generate</div>
-          </div>
+                <div class="">
+                    <label class="my-2">Position</label>
+                    <select class="form-control" name="mposition">
+                
+                      <option>left</option>
+                      <option>right</option>
+                    </select>
+                    <div class="mt-4 btn btn-primary generate-mlink">Generate</div>
+                </div>
 
 
 
@@ -1256,7 +1256,7 @@ export let commerceApp_ = {
                     <div class="">
                         <label class="my-2">${rc} Position</label>
                         <select class="form-control" name="position">
-                          <option>auto</option>
+                    
                           <option>left</option>
                           <option>right</option>
                         </select>
@@ -1273,7 +1273,7 @@ export let commerceApp_ = {
                       <div class="">
                           <label class="my-2">${rc} Position</label>
                           <select class="form-control" name="position">
-                            <option>auto</option>
+                         
                             <option>left</option>
                             <option>right</option>
                           </select>
@@ -6565,7 +6565,7 @@ export let commerceApp_ = {
           </div>
 
           <div class="row">
-            <div class="col-12 col-lg-6">
+            <div class="col-12 col-lg-8 offset-lg-2">
               <div class="card mb-3">
                 <div class="card-header">
                   <h6 class="card-title mb-0 text-danger">Create Sell Order</h6>
@@ -6573,11 +6573,11 @@ export let commerceApp_ = {
                 </div>
                 <div class="card-body">
                   <div class="row g-2">
-                    <div class="col-12">
+                    <div class="col-12 col-lg-6">
                       <label class="form-label">Quantity</label>
                       <input type="number" class="form-control" id="sm_sell_qty" placeholder="Enter quantity" step="0.01" />
                     </div>
-                    <div class="col-12">
+                    <div class="col-12 col-lg-6">
                       <label class="form-label">Price per Unit</label>
                       <input type="number" class="form-control" id="sm_sell_price" placeholder="Enter price per unit" step="0.01" />
                     </div>
@@ -6589,31 +6589,7 @@ export let commerceApp_ = {
                 </div>
               </div>
             </div>
-            
-            <div class="col-12 col-lg-6">
-              <div class="card mb-3">
-                <div class="card-header">
-                  <h6 class="card-title mb-0 text-success">Create Buy Order</h6>
-                  <small class="text-muted">Buy active tokens with cash</small>
-                </div>
-                <div class="card-body">
-                  <div class="row g-2">
-                    <div class="col-12">
-                      <label class="form-label">Quantity</label>
-                      <input type="number" class="form-control" id="sm_buy_qty" placeholder="Enter quantity" step="0.01" />
-                    </div>
-                    <div class="col-12">
-                      <label class="form-label">Price per Unit</label>
-                      <input type="number" class="form-control" id="sm_buy_price" placeholder="Enter price per unit" step="0.01" />
-                    </div>
-                    <div class="col-12">
-                      <button id="btn-create-buy" class="btn btn-success w-100">Create Buy Order</button>
-                    </div>
-                  </div>
-                  <div id="buy-result" class="mt-2"></div>
-                </div>
-              </div>
-            </div>
+        
           </div>
 
           <div class="row">
@@ -6670,13 +6646,15 @@ export let commerceApp_ = {
             r.forEach(item => {
                 list.push(`
                     <tr>
-                        <td>#${item.seq}</td>
+                  
                         <td>${item.unit_price}</td>
                            <td>${item.total_quantity}</td>
-                        <td>${Number(item.total_quantity - (item.total_traded)).toFixed(2)}</td>
+                        <td>${Number(item.total_quantity - (item.member_sell_quantity + item.company_sell_quantity)).toFixed(2)}</td>
                      
-                        <td>${Number(item.company_traded).toFixed(2)}</td>
-                        <td>${Number(item.member_traded).toFixed(2)}</td>
+                        <td class="ctraded">${Number(item.company_traded).toFixed(2)}</td>
+                        <td class="mtraded">${Number(item.member_traded).toFixed(2)}</td>
+                        <td>${Number(item.company_sell_quantity).toFixed(2)}</td>
+                        <td>${Number(item.member_sell_quantity).toFixed(2)}</td>
                      
                         
                         
@@ -6698,14 +6676,15 @@ export let commerceApp_ = {
                                 <table class="table table-hover">
                                     <thead class="table-light">
                                         <tr>
-                                            <th scope="col">Tranche</th>
+                                 
                                              <th scope="col">Unit Price</th>
                                             <th scope="col">Total Quantity</th>
                                             <th scope="col">Balance</th>
-                                            <th scope="col">Company Traded</th>
-                                            <th scope="col">Members Traded</th>
+                                            <th class="ctraded" scope="col">Company Traded</th>
+                                            <th class="mtraded" scope="col">Members Traded</th>
                                             
-                                            
+                                            <th scope="col">Company Orders</th>
+                                            <th scope="col">Member Orders</th>
                                            
                                             
                                         </tr>
