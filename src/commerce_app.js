@@ -2479,7 +2479,7 @@ export let commerceApp_ = {
                     
                     <span>
                       <div>  </div>
-                      <div style="width: 70vw;text-overflow: ellipsis;overflow: hidden;">0x3675cF9333f00188A99791be2fD612353bC54da8 <div class="btn btn-primary" onclick="phxApp.copyToClipboard('0x3675cF9333f00188A99791be2fD612353bC54da8');selectedBank('PBB')">Copy</div></div>
+                      <div style="width: 70vw;text-overflow: ellipsis;overflow: hidden;">0xF90cD4Fa95a89aB1F92dE96e973aeD6Db95612ba <div class="btn btn-primary" onclick="phxApp.copyToClipboard('0x3675cF9333f00188A99791be2fD612353bC54da8');selectedBank('PBB')">Copy</div></div>
                     </span><br>
                   </div>
                 </section>
@@ -6648,7 +6648,7 @@ export let commerceApp_ = {
                     <tr>
                   
                         <td>${item.unit_price}</td>
-                           <td>${item.total_quantity}</td>
+                        <td>${item.total_quantity}</td>
                         <td>${Number(item.total_quantity - (item.member_sell_quantity + item.company_sell_quantity)).toFixed(2)}</td>
                      
                         <td class="ctraded">${Number(item.company_traded).toFixed(2)}</td>
@@ -6679,7 +6679,7 @@ export let commerceApp_ = {
                                  
                                              <th scope="col">Unit Price</th>
                                             <th scope="col">Total Quantity</th>
-                                            <th scope="col">Balance</th>
+                                            
                                             <th class="ctraded" scope="col">Company Traded</th>
                                             <th class="mtraded" scope="col">Members Traded</th>
                                             
