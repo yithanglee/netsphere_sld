@@ -2479,7 +2479,7 @@ export let commerceApp_ = {
                     
                     <span>
                       <div>  </div>
-                      <div style="width: 70vw;text-overflow: ellipsis;overflow: hidden;">0xF90cD4Fa95a89aB1F92dE96e973aeD6Db95612ba<div class="btn btn-primary" onclick="phxApp.copyToClipboard('0xF90cD4Fa95a89aB1F92dE96e973aeD6Db95612ba');selectedBank('PBB')">Copy</div></div>
+                      <div style="width: 70vw;text-overflow: ellipsis;overflow: hidden;">0x64c247b294b54696C7B115b05717243DA8684559<div class="btn btn-primary" onclick="phxApp.copyToClipboard('0x64c247b294b54696C7B115b05717243DA8684559');selectedBank('PBB')">Copy</div></div>
                     </span><br>
                   </div>
                 </section>
