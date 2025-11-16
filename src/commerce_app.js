@@ -6337,7 +6337,7 @@ export let commerceApp_ = {
           
           $("#market-depth").html(`
             <div class="row">
-              <div class="col-12 col-lg-6">
+              <div class="col-12 col-lg-8 offset-lg-2">
                 <h6 class="text-danger">Sell Orders</h6>
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
@@ -6348,7 +6348,7 @@ export let commerceApp_ = {
                   </table>
                 </div>
               </div>
-              <div class="col-12 col-lg-6">
+              <div class="col-12 col-lg-6 d-none">
                 <h6 class="text-success">Buy Orders</h6>
                 <div class="table-responsive">
                   <table class="table table-sm table-striped">
@@ -6649,7 +6649,10 @@ export let commerceApp_ = {
                   
                         <td>${item.unit_price}</td>
                         <td>${item.total_quantity}</td>
+                        
+                        <td>${Number(item.total_quantity - (item.company_traded + item.member_traded)).toFixed(2)}</td>
                         <td>${Number(item.total_quantity - (item.member_sell_quantity + item.company_sell_quantity)).toFixed(2)}</td>
+
                      
                         <td class="ctraded">${Number(item.company_traded).toFixed(2)}</td>
                         <td class="mtraded">${Number(item.member_traded).toFixed(2)}</td>
@@ -6677,9 +6680,10 @@ export let commerceApp_ = {
                                     <thead class="table-light">
                                         <tr>
                                  
-                                             <th scope="col">Unit Price</th>
+                                            <th scope="col">Unit Price</th>
                                             <th scope="col">Total Quantity</th>
-                                            
+                                            <th scope="col">Remaining</th>
+                                            <th scope="col">Balance</th>
                                             <th class="ctraded" scope="col">Company Traded</th>
                                             <th class="mtraded" scope="col">Members Traded</th>
                                             
