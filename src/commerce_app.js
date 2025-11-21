@@ -369,8 +369,7 @@ export let commerceApp_ = {
                       POL: "https://e8b864cf8d55fbd854f43ae53b6c824c.ipfscdn.io/ipfs/Qmd58rKLnBfteouAcmdjQ1HzDvRLSLjMbHjuXRytsKwAkD",
                       USDT: "https://polygonscan.com/token/images/tether_32.png",
                       USDC: "https://polygonscan.com/token/images/centre-usdc_32.png",
-                      KTDFI: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png",
-                      NETSPH: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png"
+                      NETSPH: "https://api.netspheremall.com/images/uploads/netsphere_token.png"
                   }
                   return m[sym] || m.POL
               }
@@ -1765,8 +1764,8 @@ export let commerceApp_ = {
                       POL: "https://e8b864cf8d55fbd854f43ae53b6c824c.ipfscdn.io/ipfs/Qmd58rKLnBfteouAcmdjQ1HzDvRLSLjMbHjuXRytsKwAkD",
                       USDT: "https://polygonscan.com/token/images/tether_32.png",
                       USDC: "https://polygonscan.com/token/images/centre-usdc_32.png",
-                      KTDFI: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png",
-                      NETSPH: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png"
+                      KTDFI: "https://api.netspheremall.com/images/uploads/netsphere_token.png",
+                      NETSPH: "https://api.netspheremall.com/images/uploads/netsphere_token.png"
                   }
                   return m[sym] || m.POL
               }
@@ -2118,7 +2117,7 @@ export let commerceApp_ = {
                         POL: "https://e8b864cf8d55fbd854f43ae53b6c824c.ipfscdn.io/ipfs/Qmd58rKLnBfteouAcmdjQ1HzDvRLSLjMbHjuXRytsKwAkD",
                         USDT: "https://polygonscan.com/token/images/tether_32.png",
                         USDC: "https://polygonscan.com/token/images/centre-usdc_32.png",
-                        KTDFI: "https://ipfs.io/ipfs/QmSLo5e3PSBWgF3wysabPzsBjoRLngrFoVNrGwgL3vm2Zn/KTDFI_600x600.png"
+                        KTDFI: "https://api.netspheremall.com/images/uploads/netsphere_token.png"
                     }
                     return m[sym] || m.POL
                 }
@@ -2733,28 +2732,62 @@ export let commerceApp_ = {
     `)
 
           }
-          var countries = []
+          var countries = [],  preferred_countries = [
+             'China',
+             'Singapore',
+             'Vietnam', 
+             
+            'Thailand',
+            
+           
+          ]
+
+          preferred_countries.forEach((v, i) => {
+            var ck = phxApp_.countries_.filter((v2,i2) => {
+              return v2.name == v
+            })
+
+            if (ck.length > 0) {
+              countries.push(`
+                  <button type="button" aria-name="` + ck[0].name + `" aria-country="` + ck[0].id + `" class="btn btn-primary ">` + ck[0].name + `</button>
+                `)
+            }
+          })
 
 
           phxApp_.countries_.forEach((v, i) => {
+
+            
+            if (!preferred_countries.includes(v.name)) {
               countries.push(`
-          <button type="button" aria-name="` + v.name + `" aria-country="` + v.id + `" class="btn btn-primary ">` + v.name + `</button>
-        `)
+                  <button type="button" aria-name="` + v.name + `" aria-country="` + v.id + `" class="btn btn-primary ">` + v.name + `</button>
+                `)
+            }
+
+              
           })
+
+
+
+
+
+
+
+
           $(".choose-region").click(() => {
               commerceApp_.emptyCart_()
               phxApp_.modal({
                   selector: "#mySubModal",
                   content: `
-        <center>
-          <div class="btn-group-vertical">
-          ` + countries.join("") + `
-          </div>
-        </center>
-      `,
-                  header: "Choose region",
-                  autoClose: false
-              })
+                            <center>
+                              <div class="btn-group-vertical">
+                              ` + countries.join("") + `
+                              </div>
+                            </center>
+                          `,
+                                      header: "Choose region",
+                                      autoClose: false
+                                  })
               $("[aria-country]").unbind()
               $("[aria-country]").click(function() {
                   var country_id = $(this).attr("aria-country"),
