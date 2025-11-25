@@ -1228,19 +1228,19 @@ export let commerceApp_ = {
               if (v == "") {
                   $(recruit).customHtml(`
 
-                <div class="">
-                    <label class="my-2">Position</label>
-                    <select class="form-control" name="mposition">
-                
-                      <option>left</option>
-                      <option>right</option>
-                    </select>
-                    <div class="mt-4 btn btn-primary generate-mlink">Generate</div>
-                </div>
+                      <div class="">
+                          <label class="my-2">Position</label>
+                          <select class="form-control" name="mposition">
+                      
+                            <option>left</option>
+                            <option>right</option>
+                          </select>
+                          <div class="mt-4 btn btn-primary generate-mlink">Generate</div>
+                      </div>
 
 
 
-          `)
+                `)
               } else {
 
                 let rc = $(recruit).attr("recruit")
@@ -1341,7 +1341,7 @@ export let commerceApp_ = {
                   phxApp_.api("get_share_link", {
                       recruit: rc,
                       username: phxApp_.user.username,
-                      position: $("select[name='position']").val()
+                      position: $(i.target).closest("recruit").find("select[name='position']").val()
                   }, null, (code) => {
 
 
