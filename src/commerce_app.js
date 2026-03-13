@@ -421,6 +421,10 @@ export let commerceApp_ = {
                   if (rb && !rb.status) balanceDisplay = Number(rb.formatted || 0).toFixed(6)
               }
 
+              var polEthRes = phxApp.api('crypto_native_balance', { token: phxApp.user && phxApp.user.token }) || {}
+              var polEthBal = (polEthRes && !polEthRes.status) ? Number(polEthRes.formatted || 0) : 0
+              var polEthSufficient = polEthBal > 0.5
+
               $("swap_back").html(`
                 <div class="card" style="max-width:520px;margin:0 auto;">
                   <div class="card-body">
@@ -436,12 +440,17 @@ export let commerceApp_ = {
                       <div class="alert alert-secondary small" role="alert">
                         <ol class="m-0 ps-3">
                           <li>Send ${sym} to treasury address.</li>
-                          <li>(Optional) Paste transaction hash and verify.</li>
                           <li>Submit request for admin approval. Our system will match your transfer in the background.</li>
                         </ol>
                       </div>
 
-                      <div class="mb-1">
+                      <div class="mb-2">
+                        <span class="text-muted">Polygon ETH (for gas):</span>
+                        <span class="ms-2 ${polEthSufficient ? 'text-success' : 'text-danger'}"><span id="sb-pol-eth">${Number(polEthBal).toFixed(6)}</span> ETH</span>
+                        ${!polEthSufficient ? '<div class="form-text text-danger">Insufficient. Need &gt; 0.5 ETH to submit.</div>' : ''}
+                      </div>
+
+                      <div class="mb-1 d-none">
                         <label class="form-label">Treasury Address</label>
                         <div class="input-group">
                           <select class="form-select" id="sb-treasury">
@@ -453,10 +462,6 @@ export let commerceApp_ = {
                       </div>
 
                       <div class="row g-2">
-                        <div class="col-12">
-                          <label class="form-label">Transaction Hash <span class="text-muted small">(optional)</span></label>
-                          <input class="form-control" id="sb-txhash" placeholder="0x..." />
-                        </div>
                         <div class="col-12">
                           <label class="form-label">Amount (${sym})</label>
                           <input type="number" step="0.000001" class="form-control" id="sb-amount" placeholder="0.0" />
@@ -475,8 +480,7 @@ export let commerceApp_ = {
                       </div>
 
                       <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary flex-fill" id="sb-verify">Verify Tx</button>
-                        <button class="btn btn-primary flex-fill" id="sb-submit">Submit Request</button>
+                        <button class="btn btn-primary flex-fill" id="sb-submit" ${!polEthSufficient ? 'disabled' : ''}>Submit Request</button>
                       </div>
 
                       <div>
@@ -510,35 +514,16 @@ export let commerceApp_ = {
                   }
               })
 
-              $(document).off('click', '#sb-verify').on('click', '#sb-verify', function(){
-                  var txh = $("#sb-txhash").val() || ""
-                  if (txh && !/^0x[0-9a-fA-F]{64}$/.test(txh)) { $("#sb-res").html(`<div class='text-danger'>Invalid transaction hash format</div>`); return }
-                  $("#sb-res").html(`<div class='text-muted'>Verifying...</div>`)
-                  var tz = $("#sb-treasury").val() || tinfo.treasury
-                  phxApp_.post('swap_back_verify_tx', { token: phxApp.user && phxApp.user.token, tx_hash: txh, contract: contract, treasury: tz }, null, function(r){
-                      if (r && r.status === 'ok') {
-                          if (r.amount) { $("#sb-amount").val(r.amount) }
-                          if (r.rate) { $("#sb-rate").text(Number(r.rate).toFixed(6)) }
-                          updatePoints()
-                          $("#sb-res").html(`<div class='text-success'>Verified. From ${shortAddr(r.from)} → ${shortAddr(r.to)} · ${Number(r.amount||0).toFixed(6)} ${sym}</div>`)
-                      } else {
-                          $("#sb-res").html(`<div class='text-danger'>Verification failed: ${r && (r.reason||r.message) || 'unknown'}</div>`)
-                      }
-                  })
-              })
-
               $(document).off('click', '#sb-submit').on('click', '#sb-submit', function(){
-                  var txh = $("#sb-txhash").val() || ""
                   var amt = parseFloat($("#sb-amount").val() || "0")
                   if (!contract) { $("#sb-res").html(`<div class='text-danger'>Missing token contract</div>`); return }
                   if (!tinfo.treasury) { $("#sb-res").html(`<div class='text-danger'>Missing treasury address</div>`); return }
-                  // if (!txh || !/^0x[0-9a-fA-F]{64}$/.test(txh)) { $("#sb-res").html(`<div class='text-danger'>Enter a valid transaction hash</div>`); return }
                   if (!isFinite(amt) || amt <= 0) { $("#sb-res").html(`<div class='text-danger'>Enter a valid amount</div>`); return }
                   if (tinfo.min_amount && amt < tinfo.min_amount) { $("#sb-res").html(`<div class='text-danger'>Amount must be ≥ ${tinfo.min_amount}</div>`); return }
+                  if (!polEthSufficient) { $("#sb-res").html(`<div class='text-danger'>Insufficient Polygon ETH. Need &gt; 0.5 ETH for gas.</div>`); return }
                   $("#sb-res").html(`<div class='text-muted'>Submitting...</div>`)
                   var tz = $("#sb-treasury").val() || tinfo.treasury
-                  var tx_payload = txh ? txh : null
-                  var payload = { token: phxApp.user && phxApp.user.token, tx_hash: tx_payload, amount: amt, symbol: sym, contract: contract, treasury: tz, wallet_address: wallet.address }
+                  var payload = { token: phxApp.user && phxApp.user.token, tx_hash: null, amount: amt, symbol: sym, contract: contract, treasury: tz, wallet_address: wallet.address }
                   phxApp_.post('swap_back_create', payload, null, function(r){
                       if (r && r.status === 'ok') {
                           $("#sb-res").html(`<div class='text-success'>Request submitted. Status: pending review</div>`)
