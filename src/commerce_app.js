@@ -426,7 +426,7 @@ export let commerceApp_ = {
               var polEthSufficient = polEthBal > 0.5
 
               $("swap_back").html(`
-                <div class="card" style="max-width:520px;margin:0 auto;">
+                <div class="" style="max-width:520px;margin:0 auto;">
                   <div class="card-body">
                     <div class="d-flex flex-column" style="gap:8px;">
                       <div class="d-flex align-items-center gap-3" style="padding: 4px 0 6px 0;">
@@ -435,19 +435,20 @@ export let commerceApp_ = {
                           <div class="fw-semibold">Swap Back ${sym} → Points</div>
                           <div class="text-muted small">Admin approval required</div>
                         </div>
-                        <div class="ms-auto small text-muted">Bal: ${balanceDisplay} ${sym}</div>
+                        <div class="ms-auto small text-success">Bal: ${balanceDisplay} ${sym}</div>
                       </div>
                       <div class="alert alert-secondary small" role="alert">
                         <ol class="m-0 ps-3">
-                          <li>Send ${sym} to treasury address.</li>
-                          <li>Submit request for admin approval. Our system will match your transfer in the background.</li>
+
+                          <li>Check balance ${sym}.</li>
+                          <li>Minimal 0.05 polygon eth for gas.</li>
                         </ol>
                       </div>
 
                       <div class="mb-2">
                         <span class="text-muted">Polygon ETH (for gas):</span>
-                        <span class="ms-2 ${polEthSufficient ? 'text-success' : 'text-danger'}"><span id="sb-pol-eth">${Number(polEthBal).toFixed(6)}</span> ETH</span>
-                        ${!polEthSufficient ? '<div class="form-text text-danger">Insufficient. Need &gt; 0.5 ETH to submit.</div>' : ''}
+                        <span class="ms-2 ${polEthSufficient ? 'text-success' : 'text-danger'}"><span id="sb-pol-eth">${Number(polEthBal).toFixed(6)}</span> POLYGON</span>
+                        ${!polEthSufficient ? '<div class="form-text text-danger">Insufficient. Need &gt; 0.05 ETH to submit.</div>' : ''}
                       </div>
 
                       <div class="mb-1 d-none">
@@ -535,7 +536,8 @@ export let commerceApp_ = {
               })
 
               $(document).off('click', '#sb-history').on('click', '#sb-history', function(){
-                  var list = phxApp.api('swap_back_history', { token: phxApp.user && phxApp.user.token }) || []
+                  var apiRes = phxApp.api('swap_back_history', { token: phxApp.user && phxApp.user.token }) || {}
+                  var list = (apiRes.res && apiRes.res.swap_backs) || []
                   if (!Array.isArray(list)) list = []
                   phxApp.modal({
                       selector: '#mySubModal',
@@ -549,9 +551,10 @@ export let commerceApp_ = {
                   })
                   var html = list.map(function(x){
                       var st = (x.status||'').toString()
-                      var pts = (typeof x.points_credited === 'number') ? Number(x.points_credited).toFixed(6) : '-'
-                      var amt = (typeof x.amount === 'number') ? Number(x.amount).toFixed(6) : '-'
+                      var amtVal = (typeof x.amount === 'number') ? x.amount : parseFloat(x.amount)
+                      var amt = (amtVal != null && !isNaN(amtVal)) ? Number(amtVal).toFixed(6) : (x.amount != null && x.amount !== '' ? String(x.amount) : '-')
                       var l = x.tx_hash ? (explorer + '/tx/' + x.tx_hash) : '#'
+                      var dt = (x.inserted_at || x.updated_at || '').replace('T', ' ').substring(0, 19) || '-'
                       return `
                         <div class="d-flex flex-column border rounded p-2 mb-2" style="gap:4px;">
                           <div class="d-flex align-items-center small">
@@ -561,7 +564,7 @@ export let commerceApp_ = {
                           </div>
                           <div class="d-flex align-items-center small">
                             <span>${amt} ${sym}</span>
-                            <span class="ms-auto">${pts} pts</span>
+                            <span class="ms-auto text-muted">${dt}</span>
                           </div>
                         </div>
                       `
