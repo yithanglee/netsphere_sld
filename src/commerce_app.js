@@ -395,7 +395,7 @@ export let commerceApp_ = {
         var sym = 'NETSPH'
         var contract = getTokenContract(sym)
         var tinfo = {
-          treasury: "0xc36340f58ff6561e428df698189ce0361c90586f",
+          treasury: "0xfe90c5e3dfcbdceb68e064262e10fd70ab3ffa60",
           rate: 1.0,
           min_amount: 0,
           confirmations: 5
@@ -405,7 +405,7 @@ export let commerceApp_ = {
         var explorer = (chainCfg && String(chainCfg.chain_id) === '80002') ? 'https://amoy.polygonscan.com' : 'https://polygonscan.com'
 
         // Prepare treasury dropdown options (configured + provided address)
-        var altTreasury = "0xc36340f58ff6561e428df698189ce0361c90586f"
+        var altTreasury = "0xfe90c5e3dfcbdceb68e064262e10fd70ab3ffa60"
         var treasuries = []
         if (tinfo.treasury) treasuries.push(String(tinfo.treasury))
         treasuries.push(altTreasury)
