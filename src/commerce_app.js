@@ -5885,83 +5885,99 @@ export let commerceApp_ = {
 
     },
     announcement() {
-      try {
+      const self = this;
+      phxApp_.api("announcements", {}, null, (list) => {
+        if (!list || list.length === 0) {
+          $("announcement").customHtml(`<div class="text-muted text-center py-4 small">No recent announcements</div>`);
+          return;
+        }
 
-        $(".anc").slick('destroy')
-      } catch (e) {
-
-      }
-      $("announcement").customHtml(`
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      `)
-
-      phxApp_.api("announcements", {
-
-      }, null, (list) => {
-
-        $("announcement").customHtml(``)
-
-        list.forEach((v, i) => {
-
-          function showContent() {
-            phxApp_.modal({
-              selector: "#mySubModal",
-              content: v.content,
-              autoClose: false,
-              header: v.title
-            })
-          }
-
-
-          var url = v.img_url,
-            doc = `
-          <div class="d-flex flex-column align-items-center" >
-
-            <div class="d-flex justify-content-center " style="cursor: pointer;   
-            position: relative; height: 240px;" announcement-id="` + v.id + `">
-              <div class="sub rounded py-2" style="
-               
-                  position: absolute;
-                  filter: blur(10px); 
-                              background-repeat: no-repeat;
-                  background-position: center;
-                  background-size: contain; 
-                  background-image: url('` + url + `');
-                 ">
-              </div>
-              <div class="su rounded py-2" style="
-            
-           
-
-                  background-position: center;
-                  background-repeat: no-repeat;
-                  background-size: cover; 
-                  background-image: url('` + url + `');
-                  z-index: 1;
-                  top: 16px;
-                  position: absolute;">
-              </div>
+        // Render a clean trigger card/button on the page
+        $("announcement").customHtml(`
+          <div class="announcement-trigger" style="cursor: pointer; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; text-align: center; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px;">
+            <div style="background: linear-gradient(135deg, var(--brand), var(--brand2)); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #031320; font-size: 18px;">
+              <i class="fa fa-bullhorn"></i>
             </div>
-            <span class="mt-3">` + v.title + `</span>
-            <small>` + v.subtitle + `</small>
-            
+            <div style="text-align: left;">
+              <h4 style="margin: 0; font-size: 16px; font-weight: 700;">Latest Announcements</h4>
+              <p style="margin: 2px 0 0; color: var(--muted); font-size: 13px;">View ${list.length} update${list.length > 1 ? 's' : ''} from the team</p>
+            </div>
           </div>
+        `);
 
-        `
+        function showAnnouncementsModal() {
+          let modalContent = `
+            <div class="announcement-modal-slider">
+          `;
 
-          $("announcement").append(doc)
+          list.forEach((v) => {
+            const imgUrl = v.img_url || '/images/placeholder.png';
+            modalContent += `
+              <div class="modal-slide" style="padding-bottom: 20px;">
+                <div style="background-image: url('${imgUrl}'); background-size: contain; background-repeat: no-repeat; background-position: center; height: 80vh; width: 100%; border-radius: 12px 12px 0 0; position: relative; overflow: hidden; margin-bottom: 20px;">
+                   <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.1));"></div>
+                </div>
+                <div class="px-2">
+                  <h3 style="margin: 0 0 10px; color: #fff; font-size: 24px; font-weight: 800;">${v.title}</h3>
+                  <p style="margin: 0 0 20px; color: #9fb3cc; font-size: 16px; font-weight: 600;">${v.subtitle || ''}</p>
+                  <div class="announcement-full-content" style="color: #e6f2ff; font-size: 15px; line-height: 1.6;">
+                    ${v.content || ''}
+                  </div>
+                </div>
+              </div>
+            `;
+          });
 
-          $("[announcement-id='" + v.id + "']")[0].onclick = showContent
+          modalContent += `</div>`;
 
+          const today = new Date().toISOString().split('T')[0];
 
+          phxApp_.modal({
+            selector: "#myModal",
+            header: "Latest Updates",
+            content: modalContent,
+            footer: `
+              <div class="d-flex align-items-center gap-2" style="font-size: 14px; color: var(--muted);">
+                <input type="checkbox" id="dontShowAgainToday" ${localStorage.getItem('announcement_hide_until') === today ? 'checked' : ''}>
+                <label for="dontShowAgainToday" style="margin: 0; cursor: pointer;">Don't show again today</label>
+              </div>
+            `,
+            autoClose: false,
+            drawFn: () => {
+              // Handle "Don't show again today" checkbox
+              $("#dontShowAgainToday").on("change", function() {
+                if (this.checked) {
+                  localStorage.setItem('announcement_hide_until', today);
+                } else {
+                  localStorage.removeItem('announcement_hide_until');
+                }
+              });
 
-        })
+              // Slick initialization
+              setTimeout(() => {
+                $(".announcement-modal-slider").slick({
+                  dots: true,
+                  arrows: false,
+                  infinite: list.length > 1,
+                  speed: 600,
+                  slidesToShow: 1,
+                  autoplay: true,
+                  autoplaySpeed: 4000,
+                  adaptiveHeight: true
+                });
+              }, 300);
+            }
+          });
+        }
 
-      })
+        $(".announcement-trigger").on("click", showAnnouncementsModal);
 
-      $(".anc").slick()
+        // Directly show on load only if not opted out for today
+        const today = new Date().toISOString().split('T')[0];
+        if (localStorage.getItem('announcement_hide_until') !== today) {
+          showAnnouncementsModal();
+        }
+      });
     },
     bonusLimit() {
 
