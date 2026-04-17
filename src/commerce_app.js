@@ -6759,7 +6759,8 @@ export let commerceApp_ = {
           display_rank = rank_name
         }
 
-        var name = user != null ? "Welcome! " + `<a href="/profile" class="navi">` + user.fullname + ` (` + display_rank + `)</a>` : `<a href="/login" class="navi">Login</a>`
+        var trader_text = user.is_trader ? " - Trader" : "";
+        var name = user != null ? "Welcome! " + `<a href="/profile" class="navi">` + user.fullname + ` (` + display_rank + trader_text + `)</a>` : `<a href="/login" class="navi">Login</a>`
         $("userProfile").customHtml(`
           
             ` + name + `
