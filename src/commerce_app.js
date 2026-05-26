@@ -1787,6 +1787,106 @@ export let commerceApp_ = {
           }).join('')
         }
 
+        var pendingStatus = { blocked: false, pending_count: 0 }
+
+        function refreshPendingStatus() {
+          var rpcUrl = getSendRpc()
+          var status = phxApp.api('crypto_wallet_nonce_status', {
+            token: phxApp.user.token,
+            rpc_url: rpcUrl
+          })
+          if (status && status.status === 'ok') {
+            pendingStatus = status
+          } else {
+            pendingStatus = { blocked: false, pending_count: 0 }
+          }
+          updatePendingBanner()
+          return pendingStatus
+        }
+
+        function updatePendingBanner() {
+          var $banner = $("#cw-pending-banner")
+          var $send = $("#cw-send")
+          if (!$banner.length) return
+          if (pendingStatus.blocked) {
+            var count = pendingStatus.pending_count || 0
+            var head = pendingStatus.stuck_head_nonce
+            $banner.removeClass('d-none').html(
+              '<div class="alert alert-warning mb-2 py-2 px-3">' +
+              '<div class="small">A previous transaction is still pending' +
+              (count > 1 ? ' (' + count + ' in queue)' : '') + '.</div>' +
+              '<div class="small text-muted">New sends are blocked until it confirms or you cancel nonce ' + head + '.</div>' +
+              '<button class="btn btn-sm btn-warning mt-2" id="cw-cancel-pending">Cancel stuck transaction</button>' +
+              '</div>'
+            )
+            $send.prop('disabled', true).addClass('disabled')
+          } else {
+            $banner.addClass('d-none').empty()
+            $send.prop('disabled', false).removeClass('disabled')
+          }
+        }
+
+        function formatSendError(r) {
+          if (r && r.reason === 'pending_transactions') {
+            var n = r.pending_count || 1
+            return 'Send blocked: ' + n + ' transaction(s) still pending. Cancel the stuck one first.'
+          }
+          return (r && r.reason) || 'unknown'
+        }
+
+        function confirmWithSecondPassword(onSuccess) {
+          phxApp.modal({
+            selector: "#myModal",
+            autoClose: false,
+            header: "Confirm",
+            content: `
+                    <div class="row g-2">
+                      <div class="col-12">
+                        <label class="form-label">Second Password</label>
+                        <input type="password" class="form-control" id="second-password" placeholder="Enter your second password" />
+                      </div>
+                      <div class="col-12">
+                        <button class="btn btn-primary" id="btn-do-confirm-action">Confirm</button>
+                      </div>
+                      <div class="col-12" id="confirm-res"></div>
+                    </div>
+                  `
+          })
+
+          $(document).off("click", "#btn-do-confirm-action").on("click", "#btn-do-confirm-action", function () {
+            var secondPassword = $("#second-password").val()
+            phxApp.api("check_second_password", { token: phxApp.user && phxApp.user.token, second_password: secondPassword }, function (r) {
+              if (r && r.reason === 'not_set') {
+                $("#myModal").modal("hide")
+                if (typeof commerceApp !== 'undefined' && commerceApp && typeof commerceApp.setSecondPassword === 'function') {
+                  commerceApp.setSecondPassword(onSuccess)
+                }
+              } else {
+                $("#confirm-res").html(`<div class='text-danger'>Invalid second password</div>`)
+              }
+            }, function (r) {
+              if (r && r.status === 'ok') {
+                $("#myModal").modal("hide")
+                onSuccess()
+              }
+            })
+          })
+        }
+
+        function performCancelPending() {
+          var rpcUrl = getSendRpc()
+          $("#cw-pending-banner").find('.alert').append(`<div class='text-muted small mt-1' id='cancel-res'>Canceling stuck transaction...</div>`)
+          phxApp_.post('crypto_cancel_pending', { token: phxApp.user && phxApp.user.token, rpc_url: rpcUrl }, null, function (r) {
+            if (r && r.status === 'ok') {
+              phxApp_.notify("Cancel submitted. Tx: " + r.tx_hash, { type: "success", header: "Cancel submitted" })
+              setTimeout(function () { refreshPendingStatus() }, 3000)
+            } else {
+              phxApp_.toast({ content: "Cancel failed: " + formatSendError(r) })
+              refreshPendingStatus()
+            }
+          })
+        }
+
         function updateNetworkRow(sym) {
           if (sym === 'POL') {
             $("#cw-network").html(
@@ -1837,6 +1937,8 @@ export let commerceApp_ = {
                           <span class="text-muted small">${phxApp.user && phxApp.user.email ? phxApp.user.email : ""}</span>
                         </div>
                       </div>
+
+                      <div id="cw-pending-banner" class="d-none" style="padding: 0 8px;"></div>
 
                       <div class="d-flex gap-2" style="padding: 0 8px 8px 8px;">
                         <button class="btn btn-outline-primary flex-fill" id="cw-send">Send</button>
@@ -1897,18 +1999,31 @@ export let commerceApp_ = {
 
 
         function performSendAction() {
+          if (pendingStatus.blocked) {
+            phxApp_.toast({ content: formatSendError({ reason: 'pending_transactions', pending_count: pendingStatus.pending_count }) })
+            return
+          }
           var sym = $("#send-asset").val(); try { localStorage.setItem('current_sym', sym) } catch (_) { }
           var to = $("#send-to").val()
           var amt = $("#send-amt").val()
           var rpcUrl = $("#send-rpc").val() || getSendRpc()
           try { localStorage.setItem('send_rpc', rpcUrl) } catch (_) { }
+          function onSendDone(r, symLabel) {
+            if (r && r.status === 'ok') {
+              refreshPendingStatus()
+            } else if (r && r.reason === 'pending_transactions') {
+              refreshPendingStatus()
+            }
+          }
           if (sym === 'POL') {
             $("#send-res").html(`<div class='text-muted'>Sending native POL...</div>`)
             phxApp_.toast({
               content: "Sending native POL..."
             })
             phxApp_.post('crypto_send_native', { token: phxApp.user && phxApp.user.token, to: to, amount: amt, rpc_url: rpcUrl }, null, function (r) {
-              if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`); else $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`)
+              if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`);
+              else $("#send-res").html(`<div class='text-danger'>Failed: ${formatSendError(r)}</div>`)
+              onSendDone(r, 'POL')
             })
             return
           }
@@ -1923,11 +2038,12 @@ export let commerceApp_ = {
                 header: "Sent"
               })
             } else {
-              $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`);
+              $("#send-res").html(`<div class='text-danger'>Failed: ${formatSendError(r)}</div>`);
               phxApp_.toast({
-                content: "Failed: " + (r && r.reason || 'unknown')
+                content: "Failed: " + formatSendError(r)
               })
             }
+            onSendDone(r, sym)
           })
 
         }
@@ -1935,6 +2051,11 @@ export let commerceApp_ = {
 
         // Send modal (native + ERC-20 simple transfer)
         $(document).off("click", "#cw-send").on("click", "#cw-send", function () {
+          refreshPendingStatus()
+          if (pendingStatus.blocked) {
+            phxApp_.toast({ content: formatSendError({ reason: 'pending_transactions', pending_count: pendingStatus.pending_count }) })
+            return
+          }
           var currentSym = (function () { try { return localStorage.getItem('current_sym') } catch (_) { return null } })() || 'NETSPH'
           phxApp.modal({
             selector: "#mySubModal",
@@ -1971,60 +2092,21 @@ export let commerceApp_ = {
                         </div>
                       `
           })
+        })
 
-
-
-
+        $(document).off("click", "#cw-cancel-pending").on("click", "#cw-cancel-pending", function () {
+          confirmWithSecondPassword(performCancelPending)
         })
 
         $(document).off("click", "#btn-do-send").on("click", "#btn-do-send", function () {
+          if (pendingStatus.blocked) {
+            phxApp_.toast({ content: formatSendError({ reason: 'pending_transactions', pending_count: pendingStatus.pending_count }) })
+            return
+          }
           var rpcUrl = $("#send-rpc").val()
           if (rpcUrl) try { localStorage.setItem('send_rpc', rpcUrl) } catch (_) { }
           $("#mySubModal").modal("hide")
-          phxApp.modal({
-            selector: "#myModal",
-            autoClose: false,
-            header: "Confirm Send",
-            content: `
-                    <div class="row g-2">
-                      <div class="col-12">
-                        <label class="form-label">Second Password</label>
-                        <input type="password" class="form-control" id="second-password" placeholder="Enter your second password" />
-                      </div>
-                      <div class="col-12">
-                        <button class="btn btn-primary" id="btn-do-confirm-send">Send</button>
-                      </div>
-                      <div class="col-12" id="send-res"></div>
-                    </div>
-                  `
-          })
-        })
-
-
-        $(document).off("click", "#btn-do-confirm-send").on("click", "#btn-do-confirm-send", function () {
-          var secondPassword = $("#second-password").val()
-
-          phxApp.api("check_second_password", { token: phxApp.user && phxApp.user.token, second_password: secondPassword }, function (r) {
-
-            if (r && r.reason === 'not_set') {
-              $("#myModal").modal("hide")
-              if (typeof commerceApp !== 'undefined' && commerceApp && typeof commerceApp.setSecondPassword === 'function') {
-                commerceApp.setSecondPassword(function () { performSendAction() })
-              }
-            } else {
-              $("#send-res").html(`<div class='text-danger'>Invalid second password</div>`)
-            }
-
-          }, function (r) {
-            if (r && r.status === 'ok') {
-              $("#myModal").modal("hide")
-              performSendAction()
-            } else {
-
-
-            }
-          })
-
+          confirmWithSecondPassword(performSendAction)
         })
 
 
@@ -2222,6 +2304,7 @@ export let commerceApp_ = {
         })
 
         // Default selected token: NETSPH
+        refreshPendingStatus()
         updateNetworkRow('NETSPH')
       })
     },
