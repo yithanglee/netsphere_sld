@@ -1764,6 +1764,29 @@ export let commerceApp_ = {
           return it && it.contract
         }
 
+        var polygonRpcEndpoints = (assetsCfg.rpc_endpoints && assetsCfg.rpc_endpoints.length)
+          ? assetsCfg.rpc_endpoints
+          : [
+            { label: 'dRPC', url: 'https://polygon.drpc.org' },
+            { label: 'PublicNode', url: 'https://polygon-bor-rpc.publicnode.com' },
+            { label: 'polygon-rpc.com', url: 'https://polygon-rpc.com' }
+          ]
+
+        function getSendRpc() {
+          try {
+            var saved = localStorage.getItem('send_rpc')
+            if (saved && polygonRpcEndpoints.some(function (e) { return e.url === saved })) return saved
+          } catch (_) { }
+          return polygonRpcEndpoints[0].url
+        }
+
+        function rpcSelectHtml() {
+          var saved = getSendRpc()
+          return polygonRpcEndpoints.map(function (e) {
+            return '<option value="' + e.url + '"' + (e.url === saved ? ' selected' : '') + '>' + e.label + '</option>'
+          }).join('')
+        }
+
         function updateNetworkRow(sym) {
           if (sym === 'POL') {
             $("#cw-network").html(
@@ -1877,12 +1900,14 @@ export let commerceApp_ = {
           var sym = $("#send-asset").val(); try { localStorage.setItem('current_sym', sym) } catch (_) { }
           var to = $("#send-to").val()
           var amt = $("#send-amt").val()
+          var rpcUrl = $("#send-rpc").val() || getSendRpc()
+          try { localStorage.setItem('send_rpc', rpcUrl) } catch (_) { }
           if (sym === 'POL') {
             $("#send-res").html(`<div class='text-muted'>Sending native POL...</div>`)
             phxApp_.toast({
               content: "Sending native POL..."
             })
-            phxApp_.post('crypto_send_native', { token: phxApp.user && phxApp.user.token, to: to, amount: amt }, null, function (r) {
+            phxApp_.post('crypto_send_native', { token: phxApp.user && phxApp.user.token, to: to, amount: amt, rpc_url: rpcUrl }, null, function (r) {
               if (r && r.status === 'ok') $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`); else $("#send-res").html(`<div class='text-danger'>Failed: ${r && r.reason || 'unknown'}</div>`)
             })
             return
@@ -1890,7 +1915,7 @@ export let commerceApp_ = {
           var contract = (assetsCfg.assets || []).filter(a => a.symbol == sym)[0]?.contract
           if (!contract) { $("#send-res").html(`<div class='text-danger'>Missing contract address</div>`); return }
           $("#send-res").html(`<div class='text-muted'>Sending ${sym}...</div>`)
-          phxApp_.post('crypto_send_erc20', { token: phxApp.user && phxApp.user.token, contract: contract, to: to, amount: amt }, null, function (r) {
+          phxApp_.post('crypto_send_erc20', { token: phxApp.user && phxApp.user.token, contract: contract, to: to, amount: amt, rpc_url: rpcUrl }, null, function (r) {
             if (r && r.status === 'ok') {
               $("#send-res").html(`<div class='text-success'>Sent. Tx: ${r.tx_hash}</div>`);
               phxApp_.notify("Sent. Tx: " + r.tx_hash, {
@@ -1934,6 +1959,12 @@ export let commerceApp_ = {
                             <input type="number" step="0.000001" class="form-control" id="send-amt" placeholder="0.0" />
                           </div>
                           <div class="col-12">
+                            <label class="form-label">RPC Endpoint</label>
+                            <select class="form-select" id="send-rpc">
+                              ${rpcSelectHtml()}
+                            </select>
+                          </div>
+                          <div class="col-12">
                             <button class="btn btn-primary" id="btn-do-send">Send</button>
                           </div>
                           <div class="col-12" id="send-res"></div>
@@ -1947,6 +1978,8 @@ export let commerceApp_ = {
         })
 
         $(document).off("click", "#btn-do-send").on("click", "#btn-do-send", function () {
+          var rpcUrl = $("#send-rpc").val()
+          if (rpcUrl) try { localStorage.setItem('send_rpc', rpcUrl) } catch (_) { }
           $("#mySubModal").modal("hide")
           phxApp.modal({
             selector: "#myModal",
